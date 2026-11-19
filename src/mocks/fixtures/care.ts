@@ -27,23 +27,36 @@ export function treatmentPlanSeed(): TreatmentPlanDto {
       'Insulina basal nocturna y bolos con las comidas principales. Los ajustes los decide tu médico.',
     updated_at: '2026-11-01T14:00:00.000Z',
     schedule: [
-      { time_of_day: '06:30', label: 'Medir glucosa en ayunas', dose_units: null },
+      { time_of_day: '06:30', label: 'Medir glucosa en ayunas', dose_units: null, insulin_kind: null, injection_sites: null },
       {
         time_of_day: '07:30',
         label: 'Insulina rápida con el desayuno, según carbohidratos',
         dose_units: null,
+        insulin_kind: 'BOLUS',
+        injection_sites: null,
       },
       {
         time_of_day: '13:00',
         label: 'Insulina rápida con el almuerzo, según carbohidratos',
         dose_units: null,
+        insulin_kind: 'BOLUS',
+        injection_sites: null,
       },
       {
         time_of_day: '19:00',
         label: 'Insulina rápida con la cena, según carbohidratos',
         dose_units: null,
+        insulin_kind: 'BOLUS',
+        injection_sites: null,
       },
-      { time_of_day: '21:30', label: 'Insulina basal', dose_units: 18 },
+      {
+        time_of_day: '21:30',
+        label: 'Insulina basal',
+        dose_units: 18,
+        insulin_kind: 'BASAL',
+        // The doctor restricts the basal to abdomen and thigh (both sides).
+        injection_sites: ['ABDOMEN_RIGHT', 'ABDOMEN_LEFT', 'THIGH_RIGHT', 'THIGH_LEFT'],
+      },
     ],
   };
 }

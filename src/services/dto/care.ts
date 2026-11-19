@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { instant, pageOf, uuid } from './common';
+import { insulinKindSchema, siteCodeSchema } from './injection';
 
 /** `HH:MM` local time of day (API.md 8.7 leaves the schedule shape open; this is the proposal). */
 const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -13,6 +14,10 @@ export const treatmentScheduleItemSchema = z.object({
   label: z.string(),
   /** Prescribed units, or null when the plan gives no fixed dose (for example, meal bolus by carbohydrates). */
   dose_units: z.number().nullable(),
+  /** Kind of insulin of the item; null for items that are not an injection (for example, a glucose check). */
+  insulin_kind: insulinKindSchema.nullable().default(null),
+  /** Sites the plan allows for this item; null means every site (the rules decide). */
+  injection_sites: z.array(siteCodeSchema).nullable().default(null),
 });
 export type TreatmentScheduleItemDto = z.infer<typeof treatmentScheduleItemSchema>;
 
