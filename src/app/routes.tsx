@@ -90,6 +90,7 @@ export const appRoutes: RouteObject[] = [
               { path: 'readings', ...screen(() => import('./pages/patient/ReadingsPage'), 'ReadingsPage') },
               { path: 'plan', ...screen(() => import('./pages/patient/PlanPage'), 'PlanPage') },
               { path: 'messages', ...screen(() => import('./pages/patient/MessagesPage'), 'MessagesPage') },
+              { path: 'assistant', ...screen(() => import('./pages/patient/AssistantPage'), 'AssistantPage') },
             ],
           },
         ],

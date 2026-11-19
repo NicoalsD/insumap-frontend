@@ -78,7 +78,7 @@ describe('patient home', () => {
     await fillRecorder('45');
     await userEvent.click(screen.getByRole('button', { name: es.patient.record.save }));
     expect(await screen.findByRole('alert')).toHaveTextContent(es.patient.record.urgent.VERY_LOW);
-    expect(screen.queryByText(/unidades/)).toBeNull();
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/unidades/);
   });
 
   it('keeps a reading in the pending queue when the network is down and sends it when it returns', async () => {

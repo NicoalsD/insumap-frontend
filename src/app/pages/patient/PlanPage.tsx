@@ -3,6 +3,7 @@ import { format } from '@/i18n/format';
 import { ApiError } from '@/services/api/ApiError';
 import { EmptyState, ErrorState, LoadingState, PageHeader } from '@/ui';
 import { longDate } from './app/patientFormat';
+import { PlanSites } from './app/injection/PlanSites';
 import { useOwnOverview, useOwnPlan } from './app/patientQueries';
 import './PatientPages.css';
 
@@ -60,6 +61,9 @@ export function PlanPage() {
                     ? es.patient.plan.noDose
                     : format(es.patient.plan.dose, { units: item.dose_units })}
                 </span>
+                {item.insulin_kind !== null ? (
+                  <PlanSites kind={item.insulin_kind} sites={item.injection_sites} />
+                ) : null}
               </li>
             ))}
           </ol>

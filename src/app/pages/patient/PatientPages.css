@@ -1,9 +1,9 @@
-/* One centered column: 40rem on desktop, full width from 360 px. */
+/* One centered column: 48rem on desktop, full width from 360 px. */
 .patient-page {
   display: grid;
   gap: var(--space-5);
   inline-size: 100%;
-  max-inline-size: 40rem;
+  max-inline-size: 48rem;
   margin-inline: auto;
   padding-block-end: var(--space-8);
 }
@@ -179,26 +179,32 @@
   gap: var(--space-1);
   max-inline-size: 85%;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: 1.25rem;
+  font-size: var(--font-size-md);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
+/* Patient turns: cobalt with white text, on the right. */
 .thread__bubble[data-sender='PATIENT'] {
   justify-self: end;
-  background: var(--color-primary-subtle);
-  color: var(--color-primary-subtle-text);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-bottom-right-radius: var(--radius-sm);
 }
 
+/* Team and assistant turns: white with a thin border, on the left. */
 .thread__bubble[data-sender='DOCTOR'] {
   justify-self: start;
   background: var(--color-surface);
+  color: var(--color-text);
   border: var(--border-width) solid var(--color-border);
+  border-bottom-left-radius: var(--radius-sm);
 }
 
 .thread__meta {
   font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  color: inherit;
 }
 
 .emergency-notice {
@@ -248,4 +254,27 @@
 .patient-layer__title {
   font-family: var(--font-display);
   font-size: var(--font-size-xl);
+}
+
+/* Insulin and glucose buttons side by side on desktop; the open wizards take the full row. */
+.patient-page__record-row {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 40rem) {
+  .patient-page__record-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.patient-page__record-row > .glucose-recorder,
+.patient-page__record-row > .injection-recorder {
+  grid-column: 1 / -1;
+}
+
+.patient-page__record-row .ui-button {
+  inline-size: 100%;
+  min-block-size: var(--control-height-lg);
 }
