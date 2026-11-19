@@ -1,6 +1,43 @@
 .assistant-chat {
   display: grid;
   gap: var(--space-4);
+  inline-size: 100%;
+  max-inline-size: 72rem;
+  /* Aligned with the page title, like a chat panel next to its notice, not centered in the window. */
+  margin-inline: 0;
+}
+
+.assistant-chat__main {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  min-inline-size: 0;
+}
+
+@media (min-width: 64rem) {
+  .assistant-chat {
+    grid-template-columns: minmax(0, 44rem) 20rem;
+    justify-content: start;
+    align-items: start;
+    gap: var(--space-8);
+  }
+
+  .assistant-chat__aside {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    inset-block-start: var(--space-6);
+  }
+
+  .assistant-chat__main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .assistant-chat__aside .ai-notice-band {
+    border-radius: var(--radius-lg);
+    align-items: flex-start;
+  }
 }
 
 .assistant-chat__turn {

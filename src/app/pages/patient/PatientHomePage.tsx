@@ -10,7 +10,8 @@ import { ErrorState, LoadingState } from '@/ui';
 import { GlucoseRecorder } from './app/recording/GlucoseRecorder';
 import { PendingNotice } from './app/offline/PendingNotice';
 import { LatestLayer, DayLayer, WeekLayer, RemindersLayer } from './app/home/HomeLayers';
-import { InjectionLayer } from './app/injection/InjectionLayer';
+import { InjectionInspector, InjectionStage } from './app/injection/InjectionLayer';
+import { useInjectionHome } from './app/injection/useInjectionHome';
 import { InsulinRecorder } from './app/injection/InsulinRecorder';
 import { greetingFor } from './app/patientFormat';
 import { useNow } from './app/useNow';
@@ -28,7 +29,12 @@ const metricsAdapter = new MetricsViewModelAdapter();
 const WEEK_WINDOW = '7d';
 const HOME_WINDOW = '14d';
 
-/** Home of the patient, in layers: last reading, register, today, the week, today's reminders. */
+/**
+ * Home of the patient. On a computer, three zones like a body viewer: the readings on the left, the
+ * body in the middle (the only control of the injection site) and the inspector on the right with
+ * today's site, its reasons and the reminders. One column on phones: the inspector introduces the
+ * body, so it comes first in the DOM (and in the keyboard order) on every size.
+ */
 export function PatientHomePage() {
   const { state } = useSession();
   const now = useNow();
@@ -38,6 +44,7 @@ export function PatientHomePage() {
   const week = useOwnMetrics(WEEK_WINDOW);
   const reminders = useOwnReminders();
   const updateReminder = useUpdateReminder();
+  const injection = useInjectionHome();
 
   const profile = useMemo(
     () => (overview.data ? profiles.adapt(overview.data.target_profile) : null),
@@ -80,18 +87,18 @@ export function PatientHomePage() {
 
   return (
     <div className="patient-page patient-home">
-      <header className="patient-page__head patient-home__head">
-        <h1 className="patient-page__title">{greetingFor(now, session.fullName)}</h1>
-        <p className="patient-page__lead">{es.patient.greeting.subtitle}</p>
-      </header>
+      <div className="patient-home__data">
+        <header className="patient-page__head patient-home__head">
+          <h1 className="patient-page__title">{greetingFor(now, session.fullName)}</h1>
+          <p className="patient-page__lead">{es.patient.greeting.subtitle}</p>
+        </header>
 
-      {hasAlert ? (
-        <p className="patient-page__banner" role="status">
-          {es.patient.alertBanner}
-        </p>
-      ) : null}
+        {hasAlert ? (
+          <p className="patient-page__banner" role="status">
+            {es.patient.alertBanner}
+          </p>
+        ) : null}
 
-      <div className="patient-home__main">
         <LatestLayer reading={latest} profile={profile} timeZone={timeZone} now={now} />
 
         <div className="patient-page__record">
@@ -111,7 +118,17 @@ export function PatientHomePage() {
             goalPct={profile.goals.tirMinPct}
           />
         ) : null}
+      </div>
 
+      <div className="patient-home__inspector">
+        <InjectionInspector home={injection} />
+      </div>
+
+      <div className="patient-home__stage" role="region" aria-label={es.patient.injection.stageLabel}>
+        <InjectionStage home={injection} />
+      </div>
+
+      <div className="patient-home__reminders">
         {reminders.isError ? (
           <ErrorState
             error={reminders.error}
@@ -127,10 +144,6 @@ export function PatientHomePage() {
             errorMessage={updateReminder.isError ? es.patient.reminders.error : null}
           />
         )}
-      </div>
-
-      <div className="patient-home__side">
-        <InjectionLayer />
       </div>
     </div>
   );

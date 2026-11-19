@@ -1,4 +1,5 @@
 import { useMemo, useState, type SyntheticEvent } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import { apiErrorMessage } from '@/services/api/ApiError';
@@ -6,6 +7,7 @@ import type { MessageDto } from '@/services/dto/care';
 import type { FieldLimitsDto } from '@/services/dto/meta';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/ui';
 import { clockTime } from '../patientFormat';
+import './Messages.css';
 import { useMessageThread, useSendMessage } from '../patientQueries';
 
 /** Message limit the API publishes; no literal in the client. */
@@ -58,18 +60,27 @@ export function MessageThread({ limits, timeZone }: { readonly limits: FieldLimi
   };
 
   return (
-    <section className="patient-page__section" aria-labelledby="thread-title">
-      <h2 id="thread-title" className="visually-hidden">{es.patient.messages.title}</h2>
-      <p className="emergency-notice">{es.patient.messages.emergency}</p>
+    <div className="messages-layout">
+      <aside className="messages-aside" aria-labelledby="messages-aside-title">
+        <div className="messages-notice">
+          <TriangleAlert className="messages-notice__icon" aria-hidden="true" size="1.25rem" />
+          <h2 id="messages-aside-title" className="messages-notice__title">{es.patient.messages.asideTitle}</h2>
+          <p className="messages-notice__text">{es.patient.messages.emergency}</p>
+        </div>
+      </aside>
 
+      <section className="messages-main" aria-labelledby="thread-title">
+      <h2 id="thread-title" className="visually-hidden">{es.patient.messages.title}</h2>
       {thread.isPending ? <LoadingState /> : null}
       {thread.isError ? (
         <ErrorState error={thread.error} onRetry={() => { void thread.refetch(); }} />
       ) : null}
-      {thread.isSuccess && messages.length === 0 ? <EmptyState title={es.patient.messages.empty} /> : null}
+      {thread.isSuccess && messages.length === 0 ? (
+        <div className="messages-empty"><EmptyState title={es.patient.messages.empty} /></div>
+      ) : null}
 
       {messages.length > 0 ? (
-        <ul className="thread">
+        <ul className="thread" aria-live="polite">
           {thread.hasNextPage ? (
             <li className="patient-page__more">
               <Button variant="secondary" size="lg" loading={thread.isFetchingNextPage} onClick={() => { void thread.fetchNextPage(); }}>
@@ -90,7 +101,7 @@ export function MessageThread({ limits, timeZone }: { readonly limits: FieldLimi
         </ul>
       ) : null}
 
-      <form className="compose" noValidate onSubmit={onSubmit}>
+      <form className="compose messages-compose" noValidate onSubmit={onSubmit}>
         <label htmlFor="compose-body" className="patient-layer__title">{es.patient.messages.label}</label>
         <textarea
           id="compose-body"
@@ -100,15 +111,20 @@ export function MessageThread({ limits, timeZone }: { readonly limits: FieldLimi
           aria-describedby="compose-counter compose-error"
           onChange={(event) => { setDraft(event.target.value); }}
         />
-        <p id="compose-counter" className="compose__counter">
-          {max === undefined ? null : format(es.patient.messages.counter, { count: draft.trim().length, max })}
-        </p>
-        {error ? <p id="compose-error" role="alert" className="compose__error">{error}</p> : null}
-        {sent ? <p role="status">{es.patient.messages.sent}</p> : null}
-        <Button type="submit" size="lg" loading={send.isPending}>
-          {send.isPending ? es.patient.messages.sending : es.patient.messages.send}
-        </Button>
+        <div className="messages-compose__bar">
+          <div className="messages-compose__status">
+            <p id="compose-counter" className="compose__counter">
+              {max === undefined ? null : format(es.patient.messages.counter, { count: draft.trim().length, max })}
+            </p>
+            {error ? <p id="compose-error" role="alert" className="compose__error">{error}</p> : null}
+            {sent ? <p role="status">{es.patient.messages.sent}</p> : null}
+          </div>
+          <Button type="submit" size="lg" className="messages-compose__send" loading={send.isPending}>
+            {send.isPending ? es.patient.messages.sending : es.patient.messages.send}
+          </Button>
+        </div>
       </form>
-    </section>
+      </section>
+    </div>
   );
 }
