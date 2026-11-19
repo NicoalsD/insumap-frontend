@@ -22,8 +22,16 @@ export function createQueryClient(): QueryClient {
   });
 }
 
+const LOGIN_PATH = '/login';
+
+/** A session that cannot continue (revoked, or the refresh failed) sends the person to sign in again. */
+function goToExpiredLogin(): void {
+  if (window.location.pathname === LOGIN_PATH) return;
+  window.location.assign(`${LOGIN_PATH}?reason=expired`);
+}
+
 /** Builds the facade with a fresh in-memory token store. */
 export function createApiClient(): ApiContextValue {
   const tokens = new AccessTokenStore();
-  return { api: new InsumapApi({ tokens }), tokens };
+  return { api: new InsumapApi({ tokens, onSessionLost: goToExpiredLogin }), tokens };
 }

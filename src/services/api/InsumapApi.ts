@@ -618,8 +618,10 @@ export class InsumapApi {
   }
 
   private loseSession(): void {
+    // Only a session that was open is "lost": a failed sign-in step never held an access token.
+    const hadSession = this.tokens.get() !== null;
     this.tokens.clear();
-    this.onSessionLost?.();
+    if (hadSession) this.onSessionLost?.();
   }
 
   private async send<S extends z.ZodType | undefined>(spec: RequestSpec<S>): Promise<Output<S>> {
