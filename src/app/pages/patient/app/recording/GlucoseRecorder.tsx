@@ -307,12 +307,14 @@ export function GlucoseRecorder({ thresholds, limits, defaultOpen = false }: Glu
               {es.patient.record.back}
             </Button>
           ) : null}
+          {/* Distinct keys: React must not turn the clicked "Continuar" into the submit button
+              while the click is still running, or the form saves a step early. */}
           {step < STEPS ? (
-            <Button size="lg" onClick={onNext}>
+            <Button key="next" size="lg" onClick={onNext}>
               {es.patient.record.next}
             </Button>
           ) : (
-            <Button type="submit" size="lg" loading={busy}>
+            <Button key="save" type="submit" size="lg" loading={busy}>
               {busy ? es.patient.record.saving : es.patient.record.save}
             </Button>
           )}
