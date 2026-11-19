@@ -52,7 +52,7 @@ export function clinicalHandlers(state: MockState) {
     }),
 
     // `me` routes are declared before `:patient_id` so "me" is never read as an id (API.md 8.4).
-    http.get(apiUrl('/patients/me/overview'), ({ request }) => {
+    http.get(apiUrl('/patients/own/overview'), ({ request }) => {
       const result = guard(state, request, PERMISSIONS.patientReadOwn);
       if ('response' in result) return result.response;
       const window = windowOf(new URL(request.url));
@@ -63,7 +63,7 @@ export function clinicalHandlers(state: MockState) {
       return HttpResponse.json(ownOverviewSchema.parse(overview));
     }),
 
-    http.get(apiUrl('/patients/me/metrics'), ({ request }) => {
+    http.get(apiUrl('/patients/own/metrics'), ({ request }) => {
       const result = guard(state, request, PERMISSIONS.metricsReadOwn);
       if ('response' in result) return result.response;
       const window = windowOf(new URL(request.url));

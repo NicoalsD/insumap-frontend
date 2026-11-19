@@ -1,5 +1,5 @@
 /**
- * Permission codes of `iam.permissions` as `GET /auth/me` returns them (API.md section 8).
+ * Permission codes of `iam.permissions` as `GET /auth/current-user` returns them (API.md section 8).
  * They are identifiers, not clinical values. Route guards use them for UX only: the server decides.
  */
 export const PERMISSIONS = {

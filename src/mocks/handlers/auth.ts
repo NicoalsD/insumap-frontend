@@ -95,7 +95,7 @@ export function authHandlers(state: MockState) {
       });
     }),
 
-    http.get(apiUrl('/auth/me'), ({ request }) => {
+    http.get(apiUrl('/auth/current-user'), ({ request }) => {
       const result = guard(state, request, undefined, { allowEnrollment: true });
       if ('response' in result) return result.response;
       const { account } = result;
