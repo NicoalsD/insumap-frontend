@@ -101,6 +101,16 @@ export function useAlertList(filters: AlertListFilters) {
   });
 }
 
+/** The doctor marks a patient as reviewed; the queue refreshes so the row says so. */
+export function useMarkReviewed(window: MetricsWindow) {
+  const { api } = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (patientId: string) => api.markPatientReviewed(patientId, window),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: triageKey }),
+  });
+}
+
 /** Acknowledge and resolve. Both refresh the queue and every alert list, so counts stay true. */
 export function useAlertActions() {
   const { api } = useApi();

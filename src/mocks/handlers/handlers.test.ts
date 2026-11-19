@@ -153,6 +153,12 @@ describe('mock doctor endpoints (API.md 8.8 to 8.11)', () => {
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
 
+  it('marks an assigned patient as reviewed and answers 404 for another', async () => {
+    const reviewed = await api.markPatientReviewed(patientId(1), '14d');
+    expect(reviewed.patient_id).toBe(patientId(1));
+    expect(await codeOf(api.markPatientReviewed(patientId(999), '14d'))).toBe('NOT_FOUND');
+  });
+
   it('paginates with an opaque cursor', async () => {
     const first = await api.getTriage({ limit: 3 });
     expect(first.items).toHaveLength(3);

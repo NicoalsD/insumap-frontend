@@ -216,3 +216,23 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
+
+/* Texto del aviso de privacidad: se lee antes de aceptar, con scroll propio si es largo. */
+.access__notice {
+  max-block-size: 12rem;
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.5;
+}
+
+.access__notice p {
+  margin: 0;
+}
+
+.access__notice .access__subtitle {
+  margin-block-end: var(--space-1);
+}

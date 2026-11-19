@@ -54,6 +54,8 @@ export const doctorStrings = {
     previewFailed: 'No pudimos cargar el resumen de este paciente.',
     previewLastReading: 'Última lectura',
     previewOpenRecord: 'Abrir expediente',
+    markReviewed: 'Marcar revisado',
+    markReviewedFailed: 'No pudimos marcar al paciente como revisado. Inténtalo de nuevo.',
     previewCv: 'Variabilidad (CV)',
     previewGmi: 'GMI',
     previewMean: 'Glucosa media',

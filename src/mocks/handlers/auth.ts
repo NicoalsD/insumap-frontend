@@ -152,6 +152,15 @@ export function authHandlers(state: MockState) {
       });
     }),
 
+    http.get(apiUrl('/public/privacy-notices/:notice_id'), ({ params }) =>
+      HttpResponse.json({
+        id: String(params['notice_id']),
+        version: '2026-11-01',
+        text: 'Tratamos tus datos de salud para el seguimiento de tu diabetes por parte del equipo de tu clínica.',
+        scopes: ['SENSITIVE_DATA_PROCESSING'],
+      }),
+    ),
+
     http.post(apiUrl('/auth/activation/complete'), async ({ request }) => {
       const body = await readBody(request);
       if (body?.['activation_token'] !== 'mock-activation-token') return apiError('INVITATION_INVALID');

@@ -7,6 +7,7 @@ import {
   currentUserSchema,
   loginResponseSchema,
   mfaConfirmSchema,
+  privacyNoticeSchema,
   mfaEnrollmentSchema,
   sessionTokenSchema,
   type CurrentUserDto,
@@ -197,6 +198,16 @@ export class InsumapApi {
     }
   }
 
+  /** Public: the privacy notice text of a clinic version, read before the patient accepts it. */
+  getPrivacyNotice(privacyNoticeVersionId: string) {
+    return this.request({
+      method: 'GET',
+      path: `/public/privacy-notices/${privacyNoticeVersionId}`,
+      schema: privacyNoticeSchema,
+      auth: false,
+    });
+  }
+
   verifyActivation(activationCode: string, birthDate: string) {
     return this.request({
       method: 'POST',
@@ -288,6 +299,16 @@ export class InsumapApi {
 
   getTriage(query: QueryParams = {}) {
     return this.request({ method: 'GET', path: '/dashboard/triage', query, schema: wireTriageSchema });
+  }
+
+  /** Marks the patient as reviewed by the doctor for the window; the triage then lists it as reviewed. */
+  markPatientReviewed(patientId: string, window: MetricsWindow) {
+    return this.request({
+      method: 'POST',
+      path: `/dashboard/patients/${patientId}/review`,
+      query: { window },
+      schema: z.object({ patient_id: z.string(), reviewed_at: z.string() }),
+    });
   }
 
   /** The overview names its profile by code; the doctor also reads the label from the profile itself. */

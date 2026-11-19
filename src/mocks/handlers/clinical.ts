@@ -55,6 +55,14 @@ export function clinicalHandlers(state: MockState) {
       return 'response' in result ? result.response : HttpResponse.json(DEMO_CLINIC);
     }),
 
+    http.post(apiUrl('/dashboard/patients/:patient_id/review'), ({ request, params }) => {
+      const result = guard(state, request, PERMISSIONS.triageRead);
+      if ('response' in result) return result.response;
+      const id = String(params['patient_id']);
+      if (!state.world.isAssigned(id)) return apiError('NOT_FOUND');
+      return HttpResponse.json({ patient_id: id, reviewed_at: new Date().toISOString() });
+    }),
+
     http.get(apiUrl('/target-profiles'), ({ request }) => {
       const result = guard(state, request, PERMISSIONS.triageRead);
       if ('response' in result) return result.response;
