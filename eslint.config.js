@@ -75,7 +75,11 @@ export default defineConfig(
     // Test files assert on literal expected values (percentages, counts, statuses); a named
     // constant for every expected number would hide what the test checks.
     files: ['src/**/*.test.{ts,tsx}', 'src/test/**'],
-    rules: { '@typescript-eslint/no-magic-numbers': 'off' },
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+      // expect(mock.method) compares vi.fn() spies; it never calls them unbound.
+      '@typescript-eslint/unbound-method': 'off',
+    },
   },
   {
     // Fixtures are data, not logic: they stand in for what the API returns.
