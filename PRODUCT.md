@@ -38,11 +38,15 @@ Plataforma B2B2C de monitoreo de pacientes con diabetes: la clínica trae a sus 
 
 - Nombre: Insumap.
 - Aviso médico siempre visible (login, pie y junto a todo contenido de IA): proyecto académico, no es un dispositivo médico, la IA solo apoya al médico.
+- Excepción en la landing pública (`/`), por decisión del usuario del 2026-11-19:
+  - Se presenta como producto en producción, sin "demo", "datos simulados" ni "proyecto académico".
+  - Lleva un aviso regulatorio en el pie y junto a la tarjeta de IA: "Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide."
+  - Las vistas de ejemplo del producto se rotulan "Vista de ejemplo".
 - Todo contenido de IA se rotula como sugerencia pendiente de la decisión del médico. El paciente nunca ve una dosis sugerida por la IA.
 
 ## Evidence on Hand
 
-No hay clientes, testimonios, métricas de uso ni logos de clínicas reales. La landing no puede inventar clientes, cifras de impacto ni certificaciones; solo describe capacidades reales del producto y declara que es un proyecto académico con datos simulados.
+No hay clientes, testimonios, métricas de uso ni logos de clínicas reales. La landing no puede inventar clientes, cifras de impacto ni certificaciones; solo describe capacidades reales del producto, con vistas rotuladas "Vista de ejemplo" y el aviso regulatorio (ver Brand Commitments).
 
 ## Anti-references
 
