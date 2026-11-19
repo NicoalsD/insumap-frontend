@@ -49,7 +49,19 @@ import {
   type ReadingCreateDto,
 } from '../dto/clinical';
 import type { MetricsWindow } from '../dto/common';
+import {
+  insulinDosePageSchema,
+  insulinDoseSchema,
+  injectionSitesResponseSchema,
+  type InjectionSitesDto,
+  type InsulinDoseCreateDto,
+  type InsulinKind,
+} from '../dto/injection';
 import { fieldLimitsResponseSchema, type FieldLimitsDto } from '../dto/meta';
+import {
+  assistantReplySchema,
+  type AssistantMessageCreateDto,
+} from '../dto/assistant';
 import { AccessTokenStore } from './AccessTokenStore';
 import { ApiError } from './ApiError';
 
@@ -396,6 +408,36 @@ export class InsumapApi {
     return this.request({ method: 'GET', path: '/patients/own/treatment-plan', schema: treatmentPlanSchema });
   }
 
+  /** Where to inject now for the given kind of insulin (BRIEF-injection). The API never suggests units. */
+  getOwnInjectionSites(kind: InsulinKind): Promise<InjectionSitesDto> {
+    return this.request({
+      method: 'GET',
+      path: '/patients/own/injection-sites',
+      query: { kind },
+      schema: injectionSitesResponseSchema,
+    });
+  }
+
+  /** Records an insulin dose with the site and spot used; the next suggestion rotates away from them. */
+  recordInsulinDose(body: InsulinDoseCreateDto) {
+    return this.request({ method: 'POST', path: '/insulin-doses', body, schema: insulinDoseSchema });
+  }
+
+  /** The signed-in patient's own dose history, newest first. */
+  listOwnInsulinDoses(query: QueryParams = {}) {
+    return this.request({ method: 'GET', path: '/insulin-doses', query, schema: insulinDosePageSchema });
+  }
+
+  /** The doctor's view of an assigned patient's dose history, including the sites used. */
+  listPatientInsulinDoses(patientId: string, query: QueryParams = {}) {
+    return this.request({
+      method: 'GET',
+      path: `/patients/${patientId}/insulin-doses`,
+      query,
+      schema: insulinDosePageSchema,
+    });
+  }
+
   listOwnReminders(query: QueryParams = {}) {
     return this.request({ method: 'GET', path: '/reminders', query, schema: reminderPageSchema });
   }
@@ -436,6 +478,11 @@ export class InsumapApi {
 
   sendMessage(body: MessageCreateDto) {
     return this.request({ method: 'POST', path: '/messages', body, schema: messageSchema });
+  }
+
+  /** Educational assistant of the patient (HU-42). Replies are plain text with citations and an escalation. */
+  sendAssistantMessage(body: AssistantMessageCreateDto) {
+    return this.request({ method: 'POST', path: '/assistant/messages', body, schema: assistantReplySchema });
   }
 
   // ---- Admin: clinic staff (API.md 8.3) ----------------------------------------------

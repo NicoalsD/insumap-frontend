@@ -52,9 +52,11 @@ export function buildDayChart(
     .filter((reading) => dayKey(new Date(reading.measured_at), timeZone) === today)
     .sort((a, b) => Date.parse(a.measured_at) - Date.parse(b.measured_at));
 
+  // The vertical scale fits the day's readings plus the target band (all cut points come from the
+  // profile), so the chart has no empty space above or below the data.
   const values = todays.map((reading) => reading.value_mg_dl);
-  const low = Math.min(thresholds.veryLowMgDl, ...values) - PAD_MG_DL;
-  const high = Math.max(thresholds.veryHighMgDl, ...values) + PAD_MG_DL;
+  const low = Math.min(thresholds.rangeLowMgDl, ...values) - PAD_MG_DL;
+  const high = Math.max(thresholds.rangeHighMgDl, ...values) + PAD_MG_DL;
   const span = Math.max(high - low, 1);
   const yOf = (value: number) => (high - value) / span;
 

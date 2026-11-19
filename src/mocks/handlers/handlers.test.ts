@@ -3,6 +3,7 @@ import { AccessTokenStore } from '@/services/api/AccessTokenStore';
 import { ApiError } from '@/services/api/ApiError';
 import { InsumapApi } from '@/services/api/InsumapApi';
 import type { ReadingCreateDto } from '@/services/dto/clinical';
+import type { InsulinKind } from '@/services/dto/injection';
 import { apiUrl } from '@/services/http/apiUrl';
 import {
   ADMIN_ACCOUNT,
@@ -49,7 +50,8 @@ async function errorOf(promise: Promise<unknown>): Promise<ApiError> {
 function stringValues(value: unknown): string[] {
   if (typeof value === 'string') return [value];
   if (Array.isArray(value)) return value.flatMap(stringValues);
-  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(stringValues);
+  if (value !== null && typeof value === 'object')
+    return Object.values(value).flatMap(stringValues);
   return [];
 }
 
@@ -65,7 +67,9 @@ describe('mock auth (API.md 8.2)', () => {
     expect(tokens.get()).toBeNull();
     expect(await codeOf(api.verifyMfa('wrong-token', DEMO_TOTP_CODE))).toBe('UNAUTHENTICATED');
     if (login.status !== 'MFA_CHALLENGE') return;
-    expect(await codeOf(api.verifyMfa(login.challenge_token, '000000'))).toBe('INVALID_CREDENTIALS');
+    expect(await codeOf(api.verifyMfa(login.challenge_token, '000000'))).toBe(
+      'INVALID_CREDENTIALS',
+    );
     await api.verifyMfa(login.challenge_token, DEMO_TOTP_CODE);
     const me = await api.getCurrentUser();
     expect(me.role).toBe('DOCTOR');
@@ -112,15 +116,26 @@ describe('mock auth (API.md 8.2)', () => {
   });
 
   it('verifies the activation code and birth date, then completes with consent', async () => {
-    expect(await codeOf(api.verifyActivation(DEMO_ACTIVATION.code, '2000-01-01'))).toBe('INVITATION_INVALID');
-    const verified = await api.verifyActivation(DEMO_ACTIVATION.code.toLowerCase(), DEMO_ACTIVATION.birthDate);
+    expect(await codeOf(api.verifyActivation(DEMO_ACTIVATION.code, '2000-01-01'))).toBe(
+      'INVITATION_INVALID',
+    );
+    const verified = await api.verifyActivation(
+      DEMO_ACTIVATION.code.toLowerCase(),
+      DEMO_ACTIVATION.birthDate,
+    );
     const body = {
       activation_token: verified.activation_token,
       new_password: 'a-long-enough-password',
-      consent: { privacy_notice_version_id: verified.privacy_notice_version_id, accepted: false, ai_external_processing: false },
+      consent: {
+        privacy_notice_version_id: verified.privacy_notice_version_id,
+        accepted: false,
+        ai_external_processing: false,
+      },
     };
     expect(await codeOf(api.completeActivation(body))).toBe('CONSENT_REQUIRED');
-    expect(await api.completeActivation({ ...body, consent: { ...body.consent, accepted: true } })).toBe('AUTHENTICATED');
+    expect(
+      await api.completeActivation({ ...body, consent: { ...body.consent, accepted: true } }),
+    ).toBe('AUTHENTICATED');
   });
 });
 
@@ -172,7 +187,9 @@ describe('mock doctor endpoints (API.md 8.8 to 8.11)', () => {
   it('moves an alert through acknowledge and resolve and refuses invalid transitions', async () => {
     const [alert] = (await api.listAlerts({ status: 'OPEN' })).items;
     if (!alert) throw new Error('missing fixture');
-    expect(await codeOf(api.resolveAlert(alert.id, 'Se contactó al paciente'))).toBe('INVALID_STATE_TRANSITION');
+    expect(await codeOf(api.resolveAlert(alert.id, 'Se contactó al paciente'))).toBe(
+      'INVALID_STATE_TRANSITION',
+    );
     expect((await api.acknowledgeAlert(alert.id)).status).toBe('ACKNOWLEDGED');
     expect((await api.resolveAlert(alert.id, 'Se contactó al paciente')).status).toBe('RESOLVED');
     expect(await codeOf(api.acknowledgeAlert(alert.id))).toBe('INVALID_STATE_TRANSITION');
@@ -185,8 +202,14 @@ describe('mock doctor endpoints (API.md 8.8 to 8.11)', () => {
     expect((await api.approveRecommendation(a.id)).status).toBe('APPROVED');
     expect(await codeOf(api.approveRecommendation(a.id))).toBe('INVALID_STATE_TRANSITION');
     expect(await codeOf(api.rejectRecommendation(b.id, 'corto'))).toBe('REASON_REQUIRED');
-    expect((await api.rejectRecommendation(b.id, 'La tendencia ya se corrigió sola')).status).toBe('REJECTED');
-    const modified = await api.modifyRecommendation(c.id, { delta_units: 1 }, 'Prefiero un ajuste más pequeño');
+    expect((await api.rejectRecommendation(b.id, 'La tendencia ya se corrigió sola')).status).toBe(
+      'REJECTED',
+    );
+    const modified = await api.modifyRecommendation(
+      c.id,
+      { delta_units: 1 },
+      'Prefiero un ajuste más pequeño',
+    );
     expect(modified.status).toBe('APPROVED_WITH_CHANGES');
   });
 });
@@ -218,7 +241,8 @@ describe('mock admin endpoints (API.md 8.4)', () => {
     await signInStaff(ADMIN_ACCOUNT);
   });
 
-  const csv = 'mrn,birth_date,email\nMRN-20001,1980-02-03,ana@example.test\nMRN-20002,no-es-fecha,\n,1990-01-01,\nMRN-10001,1985-05-05,\nMRN-20001,1980-02-03,\nMRN-20006,1991-04-04,\n';
+  const csv =
+    'mrn,birth_date,email\nMRN-20001,1980-02-03,ana@example.test\nMRN-20002,no-es-fecha,\n,1990-01-01,\nMRN-10001,1985-05-05,\nMRN-20001,1980-02-03,\nMRN-20006,1991-04-04,\n';
 
   it('validates a CSV per row without creating accounts, then confirms', async () => {
     const preview = await api.createImportPreview('CSV', csv);
@@ -243,15 +267,31 @@ describe('mock admin endpoints (API.md 8.4)', () => {
   it('rejects a CSV without required columns and a wrong media type', async () => {
     const error = await api.createImportPreview('CSV', 'nombre\nAna\n').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiError);
-    expect((error as ApiError).fieldErrors).toEqual({ 'column.mrn': 'missing', 'column.birth_date': 'missing' });
+    expect((error as ApiError).fieldErrors).toEqual({
+      'column.mrn': 'missing',
+      'column.birth_date': 'missing',
+    });
   });
 
   it('validates a FHIR bundle entry by entry', async () => {
     const bundle = JSON.stringify({
       resourceType: 'Bundle',
       entry: [
-        { resource: { resourceType: 'Patient', identifier: [{ value: 'MRN-30001' }], birthDate: '1975-06-01', telecom: [{ system: 'email', value: 'x@example.test' }] } },
-        { resource: { resourceType: 'Patient', identifier: [{ value: 'MRN-30002' }], birthDate: 'mal' } },
+        {
+          resource: {
+            resourceType: 'Patient',
+            identifier: [{ value: 'MRN-30001' }],
+            birthDate: '1975-06-01',
+            telecom: [{ system: 'email', value: 'x@example.test' }],
+          },
+        },
+        {
+          resource: {
+            resourceType: 'Patient',
+            identifier: [{ value: 'MRN-30002' }],
+            birthDate: 'mal',
+          },
+        },
         { resource: { resourceType: 'Observation' } },
         { resource: { resourceType: 'Encounter' } },
       ],
@@ -297,7 +337,9 @@ describe('mock patient record (API.md 8.6, 8.7, 8.12)', () => {
   });
 
   it('records a reading that shows first in the readings list and in the own overview', async () => {
-    const created = await api.createOwnReading(reading({ client_reading_id: 'c-visible-1', value_mg_dl: 141 }));
+    const created = await api.createOwnReading(
+      reading({ client_reading_id: 'c-visible-1', value_mg_dl: 141 }),
+    );
     expect(created.value_mg_dl).toBe(141);
     expect(created.status).toBe('ACCEPTED');
     expect((await api.listOwnReadings({ limit: 2000 })).items[0]?.id).toBe(created.id);
@@ -306,25 +348,37 @@ describe('mock patient record (API.md 8.6, 8.7, 8.12)', () => {
 
   it('answers a repeated client_reading_id with the original and a different content with CONFLICT', async () => {
     const at = measuredAt(HOUR_MS);
-    const first = await api.createOwnReading(reading({ client_reading_id: 'c-repeat-1', measured_at: at }));
-    const again = await api.createOwnReading(reading({ client_reading_id: 'c-repeat-1', measured_at: at }));
+    const first = await api.createOwnReading(
+      reading({ client_reading_id: 'c-repeat-1', measured_at: at }),
+    );
+    const again = await api.createOwnReading(
+      reading({ client_reading_id: 'c-repeat-1', measured_at: at }),
+    );
     expect(again.id).toBe(first.id);
     const conflict = await errorOf(
-      api.createOwnReading(reading({ client_reading_id: 'c-repeat-1', measured_at: at, value_mg_dl: 200 })),
+      api.createOwnReading(
+        reading({ client_reading_id: 'c-repeat-1', measured_at: at, value_mg_dl: 200 }),
+      ),
     );
     expect(conflict.code).toBe('CONFLICT');
     expect(conflict.status).toBe(409);
   });
 
   it('rejects out-of-range, future, too old and oversized input with 422', async () => {
-    const low = await errorOf(api.createOwnReading(reading({ client_reading_id: 'c-low-1', value_mg_dl: 5 })));
+    const low = await errorOf(
+      api.createOwnReading(reading({ client_reading_id: 'c-low-1', value_mg_dl: 5 })),
+    );
     expect([low.code, low.status]).toEqual(['GLUCOSE_OUT_OF_RANGE', 422]);
     const future = await errorOf(
-      api.createOwnReading(reading({ client_reading_id: 'c-future-1', measured_at: measuredAt(-HOUR_MS) })),
+      api.createOwnReading(
+        reading({ client_reading_id: 'c-future-1', measured_at: measuredAt(-HOUR_MS) }),
+      ),
     );
     expect([future.code, future.status]).toEqual(['READING_IN_FUTURE', 422]);
     const old = await errorOf(
-      api.createOwnReading(reading({ client_reading_id: 'c-old-1', measured_at: measuredAt(30 * DAY_MS) })),
+      api.createOwnReading(
+        reading({ client_reading_id: 'c-old-1', measured_at: measuredAt(30 * DAY_MS) }),
+      ),
     );
     expect([old.code, old.status]).toEqual(['READING_TOO_OLD', 422]);
     const longNote = await errorOf(
@@ -340,7 +394,9 @@ describe('mock patient record (API.md 8.6, 8.7, 8.12)', () => {
     expect(plan.schedule.some((item) => item.dose_units === null)).toBe(true);
     expect(plan.schedule.find((item) => item.label === 'Insulina basal')?.dose_units).toBe(18);
     const token = tokens.get() ?? '';
-    const raw = await fetch(apiUrl('/patients/own/treatment-plan'), { headers: { Authorization: `Bearer ${token}` } });
+    const raw = await fetch(apiUrl('/patients/own/treatment-plan'), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(JSON.stringify(await raw.json())).not.toMatch(/recommend|proposal|proposed/i);
   });
 
@@ -352,7 +408,9 @@ describe('mock patient record (API.md 8.6, 8.7, 8.12)', () => {
     expect((await api.updateOwnReminder(off.id, { enabled: true })).enabled).toBe(true);
     expect(await codeOf(api.updateOwnReminder(basal.id, { enabled: false }))).toBe('FORBIDDEN');
     expect(await codeOf(api.updateOwnReminder(uuid('r9', 9), { enabled: true }))).toBe('NOT_FOUND');
-    expect(await codeOf(api.updateOwnReminder(off.id, { time_of_day: '25:00' }))).toBe('VALIDATION_ERROR');
+    expect(await codeOf(api.updateOwnReminder(off.id, { time_of_day: '25:00' }))).toBe(
+      'VALIDATION_ERROR',
+    );
   });
 
   it('shares the thread with the doctor and keeps the notice of no emergencies', async () => {
@@ -399,7 +457,10 @@ describe('mock doctor notes, messages and fixture world (API.md 8.8, 8.11, 8.12)
     expect(thread.items.some((message) => message.sender_role === 'PATIENT')).toBe(true);
     expect(await codeOf(api.listMessages())).toBe('VALIDATION_ERROR');
     expect(await codeOf(api.listMessages({ patient_id: patientId(25) }))).toBe('NOT_FOUND');
-    const reply = await api.sendMessage({ body: 'Revisa la lectura de la madrugada.', patient_id: PATIENT_ACCOUNT.id });
+    const reply = await api.sendMessage({
+      body: 'Revisa la lectura de la madrugada.',
+      patient_id: PATIENT_ACCOUNT.id,
+    });
     expect(reply.sender_role).toBe('DOCTOR');
     expect(await codeOf(api.sendMessage({ body: 'Sin paciente' }))).toBe('VALIDATION_ERROR');
   });
@@ -412,7 +473,9 @@ describe('mock doctor notes, messages and fixture world (API.md 8.8, 8.11, 8.12)
     const triage = await api.getTriage({ limit: 100 });
     expect(triage.items.length).toBeGreaterThanOrEqual(24);
     const flags = triage.items.flatMap((row) => row.flags.map((flag) => flag.code));
-    expect(flags).toEqual(expect.arrayContaining(['NIGHT_LOWS', 'TAR_ABOVE_GOAL', 'INSUFFICIENT_DATA']));
+    expect(flags).toEqual(
+      expect.arrayContaining(['NIGHT_LOWS', 'TAR_ABOVE_GOAL', 'INSUFFICIENT_DATA']),
+    );
     expect(new Set(triage.items.map((row) => row.risk_tier)).size).toBeGreaterThanOrEqual(3);
 
     const all = await api.listPatientReadings(patientId(1), { limit: 2000 });
@@ -428,7 +491,9 @@ describe('mock doctor notes, messages and fixture world (API.md 8.8, 8.11, 8.12)
     expect(quarter.bins[0]?.time_of_day).toMatch(/^\d{2}:\d{2}$/);
     expect(quarter.bins.every((bin) => bin.p5 <= bin.p50 && bin.p50 <= bin.p95)).toBe(true);
     expect((await api.getPatientAgp(patientId(1), { resolution: 'hour' })).bins).toHaveLength(24);
-    expect(await codeOf(api.getPatientAgp(patientId(1), { resolution: '5min' }))).toBe('VALIDATION_ERROR');
+    expect(await codeOf(api.getPatientAgp(patientId(1), { resolution: '5min' }))).toBe(
+      'VALIDATION_ERROR',
+    );
     expect((await api.getPatientAgp(patientId(20))).bins).toEqual([]);
   });
 
@@ -455,7 +520,9 @@ describe('mock admin staff and care team (API.md 8.3, 8.5)', () => {
     const doctors = await api.listUsers({ role: 'DOCTOR' });
     expect(doctors.items.every((user) => user.role === 'DOCTOR')).toBe(true);
     expect(doctors.items.find((user) => user.id === DOCTOR_ACCOUNT.id)?.patients_count).toBe(24);
-    expect(doctors.items.find((user) => user.email === 'lorena.vargas@example.test')?.patients_count).toBe(5);
+    expect(
+      doctors.items.find((user) => user.email === 'lorena.vargas@example.test')?.patients_count,
+    ).toBe(5);
     expect(await codeOf(api.listUsers({ role: 'WIZARD' }))).toBe('VALIDATION_ERROR');
   });
 
@@ -464,5 +531,182 @@ describe('mock admin staff and care team (API.md 8.3, 8.5)', () => {
     const primary = items.find((item) => item.patient_id === patientId(1) && item.is_primary);
     expect(primary?.doctor_id).toBe(DOCTOR_ACCOUNT.id);
     expect(items.some((item) => item.patient_id === patientId(14) && !item.is_primary)).toBe(true);
+  });
+});
+
+describe('mock injection sites and insulin doses (BRIEF-injection)', () => {
+  beforeEach(async () => {
+    await api.login(PATIENT_ACCOUNT.email, PATIENT_ACCOUNT.password);
+  });
+
+  it('suggests one site from the profile, the plan and the history, and marks the lipohypertrophy', async () => {
+    const result = await api.getOwnInjectionSites('BASAL');
+    expect(result.kind).toBe('BASAL');
+    expect(result.sites).toHaveLength(8);
+    expect(result.sites.filter((row) => row.state === 'SUGGESTED')).toHaveLength(1);
+    const suggested = result.suggestion?.site;
+    expect(['ABDOMEN_RIGHT', 'ABDOMEN_LEFT', 'THIGH_RIGHT', 'THIGH_LEFT']).toContain(suggested);
+    expect(result.sites.find((row) => row.site === 'ARM_LEFT')).toMatchObject({
+      state: 'AVOID',
+      reason_code: 'PLAN_RESTRICTED',
+    });
+    expect(result.rules_version).toBe('injection-rules-1');
+  });
+
+  it('answers the bolus with the abdomen and the lipohypertrophy of the arm', async () => {
+    const result = await api.getOwnInjectionSites('BOLUS');
+    expect(result.suggestion?.site).toMatch(/^ABDOMEN_/);
+    expect(result.sites.find((row) => row.site === 'ARM_LEFT')).toMatchObject({
+      state: 'AVOID',
+      reason_code: 'LIPOHYPERTROPHY_REPORTED',
+    });
+  });
+
+  it('rotates away from a dose recorded now and reports its site and spot', async () => {
+    const first = await api.getOwnInjectionSites('BOLUS');
+    const site = first.suggestion?.site;
+    const spot = first.suggestion?.spot;
+    if (site === undefined || spot === undefined) throw new Error('expected a suggestion');
+
+    const created = await api.recordInsulinDose({
+      kind: 'BOLUS',
+      units: 6,
+      administered_at: new Date().toISOString(),
+      injection_site: site,
+      injection_spot: spot,
+    });
+    expect(created).toMatchObject({
+      kind: 'BOLUS',
+      units: 6,
+      injection_site: site,
+      injection_spot: spot,
+    });
+    expect(created.treatment_plan_id).not.toBeNull();
+
+    const next = await api.getOwnInjectionSites('BOLUS');
+    expect(next.suggestion?.site).not.toBe(site);
+    expect(next.sites.find((row) => row.site === site)).toMatchObject({
+      state: 'RECENT',
+      last_spot: spot,
+    });
+  });
+
+  it('lists the own doses newest first with the sites of the 14-day history', async () => {
+    const own = await api.listOwnInsulinDoses({ limit: 100 });
+    expect(own.items.length).toBeGreaterThanOrEqual(14 * 4 - 4);
+    const times = own.items.map((dose) => Date.parse(dose.administered_at));
+    expect([...times].sort((a, b) => b - a)).toEqual(times);
+    expect(
+      own.items.every((dose) => dose.injection_site !== null && dose.injection_spot !== null),
+    ).toBe(true);
+    const sites = new Set(own.items.map((dose) => dose.injection_site));
+    expect(sites.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps the plan restriction on the basal and leaves the other items without sites', async () => {
+    const plan = await api.getOwnTreatmentPlan();
+    const basal = plan.schedule.find((item) => item.insulin_kind === 'BASAL');
+    expect(basal?.injection_sites).toEqual([
+      'ABDOMEN_RIGHT',
+      'ABDOMEN_LEFT',
+      'THIGH_RIGHT',
+      'THIGH_LEFT',
+    ]);
+    const bolus = plan.schedule.filter((item) => item.insulin_kind === 'BOLUS');
+    expect(bolus).toHaveLength(3);
+    expect(bolus.every((item) => item.injection_sites === null)).toBe(true);
+    expect(plan.schedule.find((item) => item.label === 'Medir glucosa en ayunas')).toMatchObject({
+      insulin_kind: null,
+      injection_sites: null,
+    });
+  });
+
+  it('shows the sex, birth date, BMI and pregnancy in the own overview', async () => {
+    const overview = await api.getOwnOverview('14d');
+    expect(overview.patient).toMatchObject({
+      sex: 'FEMALE',
+      birth_date: '1992-03-18',
+      bmi: 23.4,
+      pregnancy_status: 'NONE',
+    });
+  });
+
+  it('refuses the doctor the own sites, the patient the doctor history, and invalid input', async () => {
+    expect(await codeOf(api.getOwnInjectionSites('NOPE' as InsulinKind))).toBe('VALIDATION_ERROR');
+    expect(
+      await codeOf(
+        api.recordInsulinDose({
+          kind: 'BOLUS',
+          units: 6,
+          administered_at: new Date().toISOString(),
+          injection_spot: 2,
+        }),
+      ),
+    ).toBe('VALIDATION_ERROR');
+    expect(await codeOf(api.listPatientInsulinDoses(patientId(3)))).toBe('FORBIDDEN');
+  });
+});
+
+describe('mock overview carries the insulin schedule of the active plan (BRIEF-injection)', () => {
+  it('gives the own overview the insulin items only, with dose, kind and sites', async () => {
+    await api.login(PATIENT_ACCOUNT.email, PATIENT_ACCOUNT.password);
+    const overview = await api.getOwnOverview('14d');
+    const schedule = overview.active_plan?.schedule ?? [];
+    expect(schedule.map((item) => item.insulin_kind)).toEqual(['BOLUS', 'BOLUS', 'BOLUS', 'BASAL']);
+    expect(schedule.find((item) => item.insulin_kind === 'BASAL')).toMatchObject({
+      dose_units: 18,
+      injection_sites: ['ABDOMEN_RIGHT', 'ABDOMEN_LEFT', 'THIGH_RIGHT', 'THIGH_LEFT'],
+    });
+    const plan = await api.getOwnTreatmentPlan();
+    expect(schedule).toEqual(plan.schedule.filter((item) => item.insulin_kind !== null));
+  });
+
+  it('gives the doctor the insulin items of an assigned patient plan', async () => {
+    await signInStaff(DOCTOR_ACCOUNT);
+    const camila = await api.getPatientOverview(patientId(1), '14d');
+    expect(camila.active_plan?.schedule.map((item) => item.insulin_kind)).toEqual([
+      'BOLUS',
+      'BOLUS',
+      'BOLUS',
+      'BASAL',
+    ]);
+  });
+});
+
+describe('mock doctor view of injection data (BRIEF-injection)', () => {
+  beforeEach(async () => {
+    await signInStaff(DOCTOR_ACCOUNT);
+  });
+
+  it('serves the 14-day history of Camila with rotated sites to the assigned doctor', async () => {
+    const doses = await api.listPatientInsulinDoses(patientId(1), { limit: 100 });
+    expect(doses.items.length).toBeGreaterThanOrEqual(14 * 4 - 4);
+    const sites = new Set(doses.items.map((dose) => dose.injection_site));
+    expect(sites.has('ABDOMEN_LEFT') && sites.has('ABDOMEN_RIGHT')).toBe(true);
+    expect(sites.has('THIGH_LEFT') && sites.has('THIGH_RIGHT')).toBe(true);
+  });
+
+  it('answers 404 for an unassigned patient and gives the doctor the pregnancy and the lean BMI', async () => {
+    expect(await codeOf(api.listPatientInsulinDoses(patientId(999)))).toBe('NOT_FOUND');
+    const pregnant = await api.getPatientOverview(patientId(5), '14d');
+    expect(pregnant.patient).toMatchObject({ sex: 'FEMALE', pregnancy_status: 'PREGNANT' });
+    const lean = await api.getPatientOverview(patientId(8), '14d');
+    expect(lean.patient).toMatchObject({ sex: 'MALE', bmi: 19.1 });
+  });
+
+  it('gives the doctor the sex, birth date, BMI and pregnancy of Camila in the overview', async () => {
+    const camila = await api.getPatientOverview(patientId(1), '14d');
+    expect(camila.patient).toEqual({
+      id: patientId(1),
+      full_name: 'Camila Restrepo Ossa',
+      sex: 'FEMALE',
+      birth_date: '1979-07-02',
+      bmi: 26.1,
+      pregnancy_status: 'NONE',
+    });
+  });
+
+  it('forbids the doctor the own injection sites', async () => {
+    expect(await codeOf(api.getOwnInjectionSites('BASAL'))).toBe('FORBIDDEN');
   });
 });

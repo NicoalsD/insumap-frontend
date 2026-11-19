@@ -5,6 +5,7 @@ import { Button } from '@/ui/Button';
 import { rangeTone } from '@/ui/rangeTone';
 import type { ReadingViewModel } from '@/services/adapters/ReadingViewModelAdapter';
 import type { RiskTier } from './types';
+import type { PatientSex } from '@/services/dto/injection';
 import { formatClockTime, formatDateTime } from './format';
 import { NOTE_FIELD_ID } from './constants';
 
@@ -17,7 +18,19 @@ export interface PatientHeaderProps {
   readonly timeZone: string;
   readonly pendingSuggestions: number;
   readonly openAlerts: number;
+  /** Sex as the record holds it. Unknown sex shows nothing: no placeholder is written in its place. */
+  readonly sex: PatientSex;
+  /** Body mass index, when the record has it (useful for the injection plan). */
+  readonly bmi: number | null;
 }
+
+const SEX_LABEL: Partial<Record<PatientSex, string>> = {
+  FEMALE: es.detail.header.sexFemale,
+  MALE: es.detail.header.sexMale,
+  OTHER: es.detail.header.sexOther,
+};
+/** One decimal place for the BMI, as clinicians write it. */
+const BMI_DECIMAL_FACTOR = 10;
 
 const SOURCE_LABEL: Record<ReadingViewModel['source'], string> = {
   CGM: es.detail.header.sourceCgm,
@@ -31,7 +44,9 @@ const SOURCE_LABEL: Record<ReadingViewModel['source'], string> = {
  * The note action moves focus to the note field of the right rail.
  */
 export function PatientHeader(props: PatientHeaderProps) {
-  const { fullName, profileLabel, source, lastReading, risk, timeZone, pendingSuggestions, openAlerts } = props;
+  const { fullName, profileLabel, source, lastReading, risk, timeZone, pendingSuggestions, openAlerts, sex, bmi } = props;
+  const sexLabel = SEX_LABEL[sex];
+  const bmiText = bmi === null ? null : format(es.detail.header.bmi, { value: Math.round(bmi * BMI_DECIMAL_FACTOR) / BMI_DECIMAL_FACTOR });
   const writeNote = () => {
     const field = document.getElementById(NOTE_FIELD_ID);
     field?.focus();
@@ -45,6 +60,18 @@ export function PatientHeader(props: PatientHeaderProps) {
         <p className="detail-header__profile">{format(es.detail.header.profile, { profile: profileLabel })}</p>
       </div>
       <dl className="detail-header__facts">
+        {sexLabel ? (
+          <div>
+            <dt>{es.detail.header.sex}</dt>
+            <dd>{sexLabel}</dd>
+          </div>
+        ) : null}
+        {bmiText ? (
+          <div>
+            <dt>{es.detail.header.bmiLabel}</dt>
+            <dd className="measure">{bmiText}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>{es.detail.header.source}</dt>
           <dd>{source ? SOURCE_LABEL[source] : es.detail.header.sourceNone}</dd>

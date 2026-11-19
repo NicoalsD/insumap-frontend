@@ -75,6 +75,8 @@ export const PATIENT_ACCOUNT: FixtureAccount = {
     'glucose.read_own',
     'glucose.write_own',
     'treatment_plans.read_own',
+    'records.read_own',
+    'records.write_own',
     'reminders.manage_own',
     'messages.use_own',
   ],

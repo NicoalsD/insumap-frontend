@@ -7,7 +7,7 @@
   min-block-size: var(--button-height);
   padding-inline: var(--space-4);
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-snug);
@@ -33,6 +33,7 @@
 .ui-button[data-variant='primary'] {
   background: var(--color-primary);
   color: var(--color-primary-text);
+  box-shadow: 0 10px 22px -12px rgb(31 75 255 / 0.7);
 }
 .ui-button[data-variant='primary']:hover:not(:disabled, [aria-disabled='true']) {
   background: var(--color-primary-hover);
@@ -43,7 +44,8 @@
 
 .ui-button[data-variant='secondary'] {
   background: var(--color-surface);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-text);
+  border-width: 2px;
   color: var(--color-text);
 }
 .ui-button[data-variant='secondary']:hover:not(:disabled, [aria-disabled='true']) {

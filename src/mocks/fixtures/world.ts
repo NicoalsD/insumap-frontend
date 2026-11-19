@@ -18,7 +18,19 @@ import type {
 } from '@/services/dto/clinical';
 import type { MetricsWindow } from '@/services/dto/common';
 import type { TargetProfileDto } from '@/services/dto/targetProfile';
-import { clinicalNoteSeed, messageSeed, reminderSeed, treatmentPlanSeed, type ReminderRecord } from './care';
+import type { InsulinDoseDto } from '@/services/dto/injection';
+import type { InjectionPatientProfile } from '../injectionRules';
+import { injectionProfileOf, insulinDoseHistorySeed, PATIENT_INJECTION_SEED } from './injection';
+import {
+  clinicalNoteSeed,
+  messageSeed,
+  reminderSeed,
+  treatmentPlanSeed,
+  type ReminderRecord,
+} from './care';
+
+/** Schedule of the seeded plan for patients whose plan is not in `world.plans`. */
+const FALLBACK_SCHEDULE = treatmentPlanSeed().schedule;
 import { DOCTOR_ACCOUNT, PATIENT_ACCOUNT, SECONDARY_DOCTOR, STAFF_DIRECTORY } from './people';
 import { ADULT_STANDARD, OLDER_OR_HIGH_RISK, PREGNANCY_T1D } from './profiles';
 import { patientId, uuid } from './ids';
@@ -96,148 +108,490 @@ interface PatientSpec {
 
 const SPECS: readonly PatientSpec[] = [
   {
-    n: 1, fullName: 'Camila Restrepo Ossa', mrn: 'MRN-10001', profile: ADULT_STANDARD, risk: 'CRITICAL', score: 92,
-    reasons: [{ code: 'RECURRENT_HYPO', reason: 'Dos hipoglucemias en las últimas 24 horas' }, { code: 'TBR_ABOVE_GOAL', reason: 'Tiempo bajo rango por encima de la meta' }],
-    pct: [3, 9, 58, 22, 8], mean: 168, cv: 41, sufficiency: 94, lastValue: 58, lastMinutesAgo: 12, openAlerts: 2, pendingRecommendations: 1, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: false,
+    n: 1,
+    fullName: 'Camila Restrepo Ossa',
+    mrn: 'MRN-10001',
+    profile: ADULT_STANDARD,
+    risk: 'CRITICAL',
+    score: 92,
+    reasons: [
+      { code: 'RECURRENT_HYPO', reason: 'Dos hipoglucemias en las últimas 24 horas' },
+      { code: 'TBR_ABOVE_GOAL', reason: 'Tiempo bajo rango por encima de la meta' },
+    ],
+    pct: [3, 9, 58, 22, 8],
+    mean: 168,
+    cv: 41,
+    sufficiency: 94,
+    lastValue: 58,
+    lastMinutesAgo: 12,
+    openAlerts: 2,
+    pendingRecommendations: 1,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: false,
   },
   {
-    n: 2, fullName: 'Andrés Felipe Cardona', mrn: 'MRN-10002', profile: ADULT_STANDARD, risk: 'HIGH', score: 78,
-    reasons: [{ code: 'TAR_ABOVE_GOAL', reason: 'Tiempo sobre rango muy por encima de la meta' }, { code: 'POSTPRANDIAL_SPIKES', reason: 'Picos después de las comidas' }],
-    pct: [0, 2, 49, 31, 18], mean: 170, cv: 33, sufficiency: 91, lastValue: 268, lastMinutesAgo: 25, openAlerts: 1, pendingRecommendations: 1, reviewed: false,
-    pattern: 'SUSTAINED_HYPER', secondaryDoctor: false,
+    n: 2,
+    fullName: 'Andrés Felipe Cardona',
+    mrn: 'MRN-10002',
+    profile: ADULT_STANDARD,
+    risk: 'HIGH',
+    score: 78,
+    reasons: [
+      { code: 'TAR_ABOVE_GOAL', reason: 'Tiempo sobre rango muy por encima de la meta' },
+      { code: 'POSTPRANDIAL_SPIKES', reason: 'Picos después de las comidas' },
+    ],
+    pct: [0, 2, 49, 31, 18],
+    mean: 170,
+    cv: 33,
+    sufficiency: 91,
+    lastValue: 268,
+    lastMinutesAgo: 25,
+    openAlerts: 1,
+    pendingRecommendations: 1,
+    reviewed: false,
+    pattern: 'SUSTAINED_HYPER',
+    secondaryDoctor: false,
   },
   {
-    n: 3, fullName: PATIENT_ACCOUNT.fullName, mrn: 'MRN-10003', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 54,
+    n: 3,
+    fullName: PATIENT_ACCOUNT.fullName,
+    mrn: 'MRN-10003',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 54,
     reasons: [{ code: 'NIGHT_LOWS', reason: 'Valores bajos entre las 2 y las 4 de la madrugada' }],
-    pct: [1, 4, 66, 22, 7], mean: 172, cv: 37, sufficiency: 88, lastValue: 142, lastMinutesAgo: 40, openAlerts: 1, pendingRecommendations: 0, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: false,
+    pct: [1, 4, 66, 22, 7],
+    mean: 172,
+    cv: 37,
+    sufficiency: 88,
+    lastValue: 142,
+    lastMinutesAgo: 40,
+    openAlerts: 1,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: false,
   },
   {
-    n: 4, fullName: 'Julián David Mejía', mrn: 'MRN-10004', profile: OLDER_OR_HIGH_RISK, risk: 'MEDIUM', score: 47,
+    n: 4,
+    fullName: 'Julián David Mejía',
+    mrn: 'MRN-10004',
+    profile: OLDER_OR_HIGH_RISK,
+    risk: 'MEDIUM',
+    score: 47,
     reasons: [{ code: 'HIGH_VARIABILITY', reason: 'Variabilidad glucémica alta' }],
-    pct: [0, 1, 58, 33, 8], mean: 176, cv: 39, sufficiency: 86, lastValue: 195, lastMinutesAgo: 75, openAlerts: 0, pendingRecommendations: 1, reviewed: false,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 58, 33, 8],
+    mean: 176,
+    cv: 39,
+    sufficiency: 86,
+    lastValue: 195,
+    lastMinutesAgo: 75,
+    openAlerts: 0,
+    pendingRecommendations: 1,
+    reviewed: false,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 5, fullName: 'Valentina Gómez Arias', mrn: 'MRN-10005', profile: PREGNANCY_T1D, risk: 'LOW', score: 28,
+    n: 5,
+    fullName: 'Valentina Gómez Arias',
+    mrn: 'MRN-10005',
+    profile: PREGNANCY_T1D,
+    risk: 'LOW',
+    score: 28,
     reasons: [{ code: 'NEAR_GOAL', reason: 'Cerca de la meta del perfil de embarazo' }],
-    pct: [0, 3, 72, 22, 3], mean: 124, cv: 31, sufficiency: 96, lastValue: 118, lastMinutesAgo: 18, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 3, 72, 22, 3],
+    mean: 124,
+    cv: 31,
+    sufficiency: 96,
+    lastValue: 118,
+    lastMinutesAgo: 18,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 6, fullName: 'Sebastián Arango Londoño', mrn: 'MRN-10006', profile: ADULT_STANDARD, risk: 'LOW', score: 19,
+    n: 6,
+    fullName: 'Sebastián Arango Londoño',
+    mrn: 'MRN-10006',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 19,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 1, 82, 15, 2], mean: 149, cv: 27, sufficiency: 97, lastValue: 124, lastMinutesAgo: 9, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 82, 15, 2],
+    mean: 149,
+    cv: 27,
+    sufficiency: 97,
+    lastValue: 124,
+    lastMinutesAgo: 9,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 7, fullName: 'Mariana Duque Salcedo', mrn: 'MRN-10007', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 41,
+    n: 7,
+    fullName: 'Mariana Duque Salcedo',
+    mrn: 'MRN-10007',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 41,
     reasons: [{ code: 'INSUFFICIENT_DATA', reason: 'Pocas lecturas en la ventana: faltan datos' }],
-    pct: [0, 0, 70, 25, 5], mean: 162, cv: 30, sufficiency: 38, lastValue: 171, lastMinutesAgo: 300, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'SPARSE', secondaryDoctor: false,
+    pct: [0, 0, 70, 25, 5],
+    mean: 162,
+    cv: 30,
+    sufficiency: 38,
+    lastValue: 171,
+    lastMinutesAgo: 300,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'SPARSE',
+    secondaryDoctor: false,
   },
   {
-    n: 8, fullName: 'Tomás Zuluaga Peña', mrn: 'MRN-10008', profile: ADULT_STANDARD, risk: 'LOW', score: 22,
+    n: 8,
+    fullName: 'Tomás Zuluaga Peña',
+    mrn: 'MRN-10008',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 22,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 2, 76, 19, 3], mean: 157, cv: 29, sufficiency: 93, lastValue: 133, lastMinutesAgo: 55, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 2, 76, 19, 3],
+    mean: 157,
+    cv: 29,
+    sufficiency: 93,
+    lastValue: 133,
+    lastMinutesAgo: 55,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 9, fullName: 'Daniela Mora Quintero', mrn: 'MRN-10009', profile: ADULT_STANDARD, risk: 'LOW', score: 16,
+    n: 9,
+    fullName: 'Daniela Mora Quintero',
+    mrn: 'MRN-10009',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 16,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 1, 84, 13, 2], mean: 146, cv: 28, sufficiency: 95, lastValue: 128, lastMinutesAgo: 22, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 84, 13, 2],
+    mean: 146,
+    cv: 28,
+    sufficiency: 95,
+    lastValue: 128,
+    lastMinutesAgo: 22,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 10, fullName: 'Felipe Ruiz Bedoya', mrn: 'MRN-10010', profile: ADULT_STANDARD, risk: 'LOW', score: 24,
+    n: 10,
+    fullName: 'Felipe Ruiz Bedoya',
+    mrn: 'MRN-10010',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 24,
     reasons: [{ code: 'NEAR_GOAL', reason: 'Cerca de la meta del perfil' }],
-    pct: [0, 2, 80, 15, 3], mean: 155, cv: 30, sufficiency: 92, lastValue: 151, lastMinutesAgo: 48, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 2, 80, 15, 3],
+    mean: 155,
+    cv: 30,
+    sufficiency: 92,
+    lastValue: 151,
+    lastMinutesAgo: 48,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 11, fullName: 'Gloria Estrada Lopera', mrn: 'MRN-10011', profile: OLDER_OR_HIGH_RISK, risk: 'LOW', score: 31,
+    n: 11,
+    fullName: 'Gloria Estrada Lopera',
+    mrn: 'MRN-10011',
+    profile: OLDER_OR_HIGH_RISK,
+    risk: 'LOW',
+    score: 31,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 1, 74, 20, 5], mean: 162, cv: 32, sufficiency: 90, lastValue: 160, lastMinutesAgo: 33, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 74, 20, 5],
+    mean: 162,
+    cv: 32,
+    sufficiency: 90,
+    lastValue: 160,
+    lastMinutesAgo: 33,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 12, fullName: 'Santiago Herrera Pulido', mrn: 'MRN-10012', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 49,
+    n: 12,
+    fullName: 'Santiago Herrera Pulido',
+    mrn: 'MRN-10012',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 49,
     reasons: [{ code: 'POSTPRANDIAL_SPIKES', reason: 'Picos después de las comidas' }],
-    pct: [0, 2, 68, 24, 6], mean: 165, cv: 34, sufficiency: 89, lastValue: 201, lastMinutesAgo: 15, openAlerts: 1, pendingRecommendations: 0, reviewed: false,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 2, 68, 24, 6],
+    mean: 165,
+    cv: 34,
+    sufficiency: 89,
+    lastValue: 201,
+    lastMinutesAgo: 15,
+    openAlerts: 1,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 13, fullName: 'Paola Jaramillo Osorio', mrn: 'MRN-10013', profile: ADULT_STANDARD, risk: 'LOW', score: 20,
+    n: 13,
+    fullName: 'Paola Jaramillo Osorio',
+    mrn: 'MRN-10013',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 20,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 1, 81, 15, 3], mean: 150, cv: 26, sufficiency: 97, lastValue: 117, lastMinutesAgo: 62, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 81, 15, 3],
+    mean: 150,
+    cv: 26,
+    sufficiency: 97,
+    lastValue: 117,
+    lastMinutesAgo: 62,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
   {
-    n: 14, fullName: 'Ernesto Valencia Trujillo', mrn: 'MRN-10014', profile: ADULT_STANDARD, risk: 'HIGH', score: 74,
+    n: 14,
+    fullName: 'Ernesto Valencia Trujillo',
+    mrn: 'MRN-10014',
+    profile: ADULT_STANDARD,
+    risk: 'HIGH',
+    score: 74,
     reasons: [{ code: 'NIGHT_LOWS', reason: 'Valores bajos entre las 2 y las 4 de la madrugada' }],
-    pct: [2, 6, 72, 16, 4], mean: 172, cv: 38, sufficiency: 91, lastValue: 86, lastMinutesAgo: 95, openAlerts: 1, pendingRecommendations: 0, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: true,
+    pct: [2, 6, 72, 16, 4],
+    mean: 172,
+    cv: 38,
+    sufficiency: 91,
+    lastValue: 86,
+    lastMinutesAgo: 95,
+    openAlerts: 1,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: true,
   },
   {
-    n: 15, fullName: 'Rosa Elena Galvis Pérez', mrn: 'MRN-10015', profile: ADULT_STANDARD, risk: 'CRITICAL', score: 88,
+    n: 15,
+    fullName: 'Rosa Elena Galvis Pérez',
+    mrn: 'MRN-10015',
+    profile: ADULT_STANDARD,
+    risk: 'CRITICAL',
+    score: 88,
     reasons: [{ code: 'RECURRENT_HYPO', reason: 'Tres hipoglucemias en las últimas 48 horas' }],
-    pct: [4, 8, 60, 20, 8], mean: 170, cv: 42, sufficiency: 93, lastValue: 64, lastMinutesAgo: 140, openAlerts: 2, pendingRecommendations: 0, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: true,
+    pct: [4, 8, 60, 20, 8],
+    mean: 170,
+    cv: 42,
+    sufficiency: 93,
+    lastValue: 64,
+    lastMinutesAgo: 140,
+    openAlerts: 2,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: true,
   },
   {
-    n: 16, fullName: 'Jorge Iván Cano Ríos', mrn: 'MRN-10016', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 52,
+    n: 16,
+    fullName: 'Jorge Iván Cano Ríos',
+    mrn: 'MRN-10016',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 52,
     reasons: [{ code: 'NIGHT_LOWS', reason: 'Valores bajos entre las 2 y las 4 de la madrugada' }],
-    pct: [1, 5, 76, 14, 4], mean: 166, cv: 36, sufficiency: 90, lastValue: 99, lastMinutesAgo: 210, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: false,
+    pct: [1, 5, 76, 14, 4],
+    mean: 166,
+    cv: 36,
+    sufficiency: 90,
+    lastValue: 99,
+    lastMinutesAgo: 210,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: false,
   },
   {
-    n: 17, fullName: 'Marcela Ospina Berrío', mrn: 'MRN-10017', profile: ADULT_STANDARD, risk: 'HIGH', score: 81,
+    n: 17,
+    fullName: 'Marcela Ospina Berrío',
+    mrn: 'MRN-10017',
+    profile: ADULT_STANDARD,
+    risk: 'HIGH',
+    score: 81,
     reasons: [{ code: 'TAR_ABOVE_GOAL', reason: 'Tiempo sobre rango muy por encima de la meta' }],
-    pct: [0, 1, 38, 40, 21], mean: 175, cv: 29, sufficiency: 92, lastValue: 246, lastMinutesAgo: 18, openAlerts: 2, pendingRecommendations: 1, reviewed: false,
-    pattern: 'SUSTAINED_HYPER', secondaryDoctor: true,
+    pct: [0, 1, 38, 40, 21],
+    mean: 175,
+    cv: 29,
+    sufficiency: 92,
+    lastValue: 246,
+    lastMinutesAgo: 18,
+    openAlerts: 2,
+    pendingRecommendations: 1,
+    reviewed: false,
+    pattern: 'SUSTAINED_HYPER',
+    secondaryDoctor: true,
   },
   {
-    n: 18, fullName: 'Hernán Darío Montoya', mrn: 'MRN-10018', profile: ADULT_STANDARD, risk: 'HIGH', score: 70,
+    n: 18,
+    fullName: 'Hernán Darío Montoya',
+    mrn: 'MRN-10018',
+    profile: ADULT_STANDARD,
+    risk: 'HIGH',
+    score: 70,
     reasons: [{ code: 'TAR_ABOVE_GOAL', reason: 'Tiempo sobre rango muy por encima de la meta' }],
-    pct: [0, 2, 44, 36, 18], mean: 172, cv: 31, sufficiency: 90, lastValue: 233, lastMinutesAgo: 55, openAlerts: 1, pendingRecommendations: 0, reviewed: false,
-    pattern: 'SUSTAINED_HYPER', secondaryDoctor: true,
+    pct: [0, 2, 44, 36, 18],
+    mean: 172,
+    cv: 31,
+    sufficiency: 90,
+    lastValue: 233,
+    lastMinutesAgo: 55,
+    openAlerts: 1,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'SUSTAINED_HYPER',
+    secondaryDoctor: true,
   },
   {
-    n: 19, fullName: 'Carolina Vélez Ocampo', mrn: 'MRN-10019', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 58,
+    n: 19,
+    fullName: 'Carolina Vélez Ocampo',
+    mrn: 'MRN-10019',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 58,
     reasons: [{ code: 'POSTPRANDIAL_SPIKES', reason: 'Picos después de las comidas' }],
-    pct: [0, 1, 55, 31, 13], mean: 170, cv: 30, sufficiency: 95, lastValue: 205, lastMinutesAgo: 80, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'SUSTAINED_HYPER', secondaryDoctor: false,
+    pct: [0, 1, 55, 31, 13],
+    mean: 170,
+    cv: 30,
+    sufficiency: 95,
+    lastValue: 205,
+    lastMinutesAgo: 80,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'SUSTAINED_HYPER',
+    secondaryDoctor: false,
   },
   {
-    n: 20, fullName: 'Óscar Mauricio Tobón', mrn: 'MRN-10020', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 44,
+    n: 20,
+    fullName: 'Óscar Mauricio Tobón',
+    mrn: 'MRN-10020',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 44,
     reasons: [{ code: 'INSUFFICIENT_DATA', reason: 'Pocas lecturas en la ventana: faltan datos' }],
-    pct: [0, 2, 71, 22, 5], mean: 158, cv: 35, sufficiency: 52, lastValue: 149, lastMinutesAgo: 420, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'SPARSE', secondaryDoctor: false,
+    pct: [0, 2, 71, 22, 5],
+    mean: 158,
+    cv: 35,
+    sufficiency: 52,
+    lastValue: 149,
+    lastMinutesAgo: 420,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'SPARSE',
+    secondaryDoctor: false,
   },
   {
-    n: 21, fullName: 'Yolanda Patiño Moreno', mrn: 'MRN-10021', profile: ADULT_STANDARD, risk: 'MEDIUM', score: 36,
+    n: 21,
+    fullName: 'Yolanda Patiño Moreno',
+    mrn: 'MRN-10021',
+    profile: ADULT_STANDARD,
+    risk: 'MEDIUM',
+    score: 36,
     reasons: [{ code: 'INSUFFICIENT_DATA', reason: 'Pocas lecturas en la ventana: faltan datos' }],
-    pct: [0, 1, 76, 19, 4], mean: 159, cv: 33, sufficiency: 61, lastValue: 142, lastMinutesAgo: 260, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'SPARSE', secondaryDoctor: false,
+    pct: [0, 1, 76, 19, 4],
+    mean: 159,
+    cv: 33,
+    sufficiency: 61,
+    lastValue: 142,
+    lastMinutesAgo: 260,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'SPARSE',
+    secondaryDoctor: false,
   },
   {
-    n: 22, fullName: 'Natalia Correa Lozano', mrn: 'MRN-10022', profile: PREGNANCY_T1D, risk: 'MEDIUM', score: 46,
+    n: 22,
+    fullName: 'Natalia Correa Lozano',
+    mrn: 'MRN-10022',
+    profile: PREGNANCY_T1D,
+    risk: 'MEDIUM',
+    score: 46,
     reasons: [{ code: 'NEAR_GOAL', reason: 'Cerca de la meta del perfil de embarazo' }],
-    pct: [0, 3, 64, 27, 6], mean: 128, cv: 31, sufficiency: 94, lastValue: 139, lastMinutesAgo: 36, openAlerts: 0, pendingRecommendations: 0, reviewed: false,
-    pattern: 'STABLE', secondaryDoctor: true,
+    pct: [0, 3, 64, 27, 6],
+    mean: 128,
+    cv: 31,
+    sufficiency: 94,
+    lastValue: 139,
+    lastMinutesAgo: 36,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'STABLE',
+    secondaryDoctor: true,
   },
   {
-    n: 23, fullName: 'Teresa de Jesús Vargas Hoyos', mrn: 'MRN-10023', profile: OLDER_OR_HIGH_RISK, risk: 'HIGH', score: 73,
+    n: 23,
+    fullName: 'Teresa de Jesús Vargas Hoyos',
+    mrn: 'MRN-10023',
+    profile: OLDER_OR_HIGH_RISK,
+    risk: 'HIGH',
+    score: 73,
     reasons: [{ code: 'NIGHT_LOWS', reason: 'Valores bajos entre las 2 y las 4 de la madrugada' }],
-    pct: [1, 4, 63, 24, 8], mean: 168, cv: 40, sufficiency: 90, lastValue: 96, lastMinutesAgo: 110, openAlerts: 1, pendingRecommendations: 0, reviewed: false,
-    pattern: 'NOCTURNAL_HYPO', secondaryDoctor: false,
+    pct: [1, 4, 63, 24, 8],
+    mean: 168,
+    cv: 40,
+    sufficiency: 90,
+    lastValue: 96,
+    lastMinutesAgo: 110,
+    openAlerts: 1,
+    pendingRecommendations: 0,
+    reviewed: false,
+    pattern: 'NOCTURNAL_HYPO',
+    secondaryDoctor: false,
   },
   {
-    n: 24, fullName: 'Sergio Andrés Lalinde', mrn: 'MRN-10024', profile: ADULT_STANDARD, risk: 'LOW', score: 18,
+    n: 24,
+    fullName: 'Sergio Andrés Lalinde',
+    mrn: 'MRN-10024',
+    profile: ADULT_STANDARD,
+    risk: 'LOW',
+    score: 18,
     reasons: [{ code: 'IN_TARGET', reason: 'Cumple las metas de la ventana' }],
-    pct: [0, 1, 83, 14, 2], mean: 143, cv: 25, sufficiency: 98, lastValue: 122, lastMinutesAgo: 7, openAlerts: 0, pendingRecommendations: 0, reviewed: true,
-    pattern: 'STABLE', secondaryDoctor: false,
+    pct: [0, 1, 83, 14, 2],
+    mean: 143,
+    cv: 25,
+    sufficiency: 98,
+    lastValue: 122,
+    lastMinutesAgo: 7,
+    openAlerts: 0,
+    pendingRecommendations: 0,
+    reviewed: true,
+    pattern: 'STABLE',
+    secondaryDoctor: false,
   },
 ];
 
@@ -282,14 +636,20 @@ function metricsFrom(
 ): MetricsResponseDto {
   const days = { '24h': 1, '7d': 7, '14d': 14, '30d': 30 }[window];
   const from = now.getTime() - days * DAY_MS;
-  const values = readings.filter((r) => Date.parse(r.measured_at) >= from).map((r) => r.value_mg_dl);
+  const values = readings
+    .filter((r) => Date.parse(r.measured_at) >= from)
+    .map((r) => r.value_mg_dl);
   const profile = spec.profile;
-  const mean = values.length === 0 ? spec.mean : values.reduce((sum, v) => sum + v, 0) / values.length;
+  const mean =
+    values.length === 0 ? spec.mean : values.reduce((sum, v) => sum + v, 0) / values.length;
   const variance =
     values.length === 0 ? 0 : values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
   const tbrL1 = shareOf(values, (v) => v < profile.range_low_mg_dl && v >= profile.very_low_mg_dl);
   const tbrL2 = shareOf(values, (v) => v < profile.very_low_mg_dl);
-  const tarL1 = shareOf(values, (v) => v > profile.range_high_mg_dl && v <= profile.very_high_mg_dl);
+  const tarL1 = shareOf(
+    values,
+    (v) => v > profile.range_high_mg_dl && v <= profile.very_high_mg_dl,
+  );
   const tarL2 = shareOf(values, (v) => v > profile.very_high_mg_dl);
   // An episode starts when a reading drops under the range; consecutive lows count once.
   let episodes = 0;
@@ -330,13 +690,15 @@ function metricsFrom(
 function valueAt(spec: PatientSpec, k: number, minuteOfDay: number): number {
   const diurnal = 12 * Math.sin(((minuteOfDay - 480) / MINUTES_PER_DAY) * 2 * Math.PI);
   const meals = MEAL_MINUTES.reduce(
-    (sum, meal) => sum + MEAL_PEAK_MG_DL[spec.pattern] * bump(minuteOfDay, meal + POSTPRANDIAL_LAG_MIN, 40),
+    (sum, meal) =>
+      sum + MEAL_PEAK_MG_DL[spec.pattern] * bump(minuteOfDay, meal + POSTPRANDIAL_LAG_MIN, 40),
     0,
   );
   // Nocturnal patients dip every night between about 2 and 4 a.m.
   const nightDip =
     spec.pattern === 'NOCTURNAL_HYPO'
-      ? -(spec.mean - NIGHT_NADIR_MG_DL) * bump(minuteOfDay, NIGHT_DIP_CENTER_MIN, NIGHT_DIP_WIDTH_MIN)
+      ? -(spec.mean - NIGHT_NADIR_MG_DL) *
+        bump(minuteOfDay, NIGHT_DIP_CENTER_MIN, NIGHT_DIP_WIDTH_MIN)
       : 0;
   const noise = NOISE_MG_DL[spec.pattern] * (unit(spec.n, k, 1) * 2 - 1);
   const value = spec.mean + diurnal + meals + nightDip + noise;
@@ -351,8 +713,13 @@ function generateReadings(spec: PatientSpec, now: Date): GlucoseReadingDto[] {
     if (k > 0 && unit(spec.n, k, 2) * 100 >= spec.sufficiency) continue;
     const at = latest - k * SLOT_MINUTES * MINUTE_MS;
     const minute = localMinutes(at);
-    const inWindow = (window: readonly [number, number]) => minute >= window[0] && minute < window[1];
-    const context = inWindow(FASTING_WINDOW) ? 'FASTING' : inWindow(BEDTIME_WINDOW) ? 'BEDTIME' : null;
+    const inWindow = (window: readonly [number, number]) =>
+      minute >= window[0] && minute < window[1];
+    const context = inWindow(FASTING_WINDOW)
+      ? 'FASTING'
+      : inWindow(BEDTIME_WINDOW)
+        ? 'BEDTIME'
+        : null;
     const id = spec.n * 10_000 + k;
     readings.push({
       id: uuid('e1', id),
@@ -394,6 +761,10 @@ export interface FixtureWorld {
   readonly reminders: Map<string, ReminderRecord[]>;
   /** Clinical notes per patient id, oldest first. */
   readonly notes: Map<string, ClinicalNoteDto[]>;
+  /** Insulin doses per patient id, oldest first. Doses posted by the patient are appended. */
+  readonly insulinDoses: Map<string, InsulinDoseDto[]>;
+  /** Rules profile (sex, birth date, BMI, pregnancy, lipohypertrophy) of a patient, or null if unknown. */
+  injectionProfile(patientId: string): InjectionPatientProfile | null;
   /** Patient-doctor thread per patient id, oldest first. */
   readonly messages: Map<string, MessageDto[]>;
   nextId(prefix: string): string;
@@ -406,7 +777,10 @@ export interface FixtureWorld {
   metrics(patientId: string, window: MetricsWindow): MetricsResponseDto | null;
   /** Newest first: own registered readings merged with the sensor history. */
   readings(patientId: string): GlucoseReadingDto[] | null;
-  agp(patientId: string, resolution: AgpResolution): {
+  agp(
+    patientId: string,
+    resolution: AgpResolution,
+  ): {
     bins: { time_of_day: string; p5: number; p25: number; p50: number; p75: number; p95: number }[];
     target_range: { low: number; high: number };
     data_sufficiency_pct: number;
@@ -429,7 +803,10 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
 
   const alerts: AlertDto[] = SPECS.flatMap((spec) =>
     Array.from({ length: spec.openAlerts }, (_, i): AlertDto => {
-      const hypo = spec.lastValue < spec.profile.range_low_mg_dl || spec.reasons[0]?.code === 'NIGHT_LOWS' || i === 1;
+      const hypo =
+        spec.lastValue < spec.profile.range_low_mg_dl ||
+        spec.reasons[0]?.code === 'NIGHT_LOWS' ||
+        i === 1;
       return {
         id: uuid('a1', spec.n * 10 + i),
         patient_id: patientId(spec.n),
@@ -438,7 +815,9 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
         level: hypo ? (spec.risk === 'CRITICAL' ? 2 : 1) : null,
         priority: spec.risk === 'CRITICAL' ? 'HIGH' : 'MEDIUM',
         status: 'OPEN',
-        opened_at: new Date(now.getTime() - (spec.lastMinutesAgo + i * 90) * MINUTE_MS).toISOString(),
+        opened_at: new Date(
+          now.getTime() - (spec.lastMinutesAgo + i * 90) * MINUTE_MS,
+        ).toISOString(),
         rule_id: uuid('b2', 1),
         is_fallback: false,
         simulated: false,
@@ -453,20 +832,32 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
     delta_units: delta,
     requires_doctor_approval: true as const,
   });
-  const recommendations: RecommendationDto[] = SPECS.filter((s) => s.pendingRecommendations > 0).map((spec, i) => {
+  const recommendations: RecommendationDto[] = SPECS.filter(
+    (s) => s.pendingRecommendations > 0,
+  ).map((spec, i) => {
     const decrease = spec.n === 1;
     return {
       id: uuid('f2', spec.n),
       patient_id: patientId(spec.n),
       status: 'PROPOSED',
-      proposal: proposalFor(decrease ? 18 : 22, decrease ? 2 : 1, decrease ? 'DECREASE' : 'INCREASE'),
+      proposal: proposalFor(
+        decrease ? 18 : 22,
+        decrease ? 2 : 1,
+        decrease ? 'DECREASE' : 'INCREASE',
+      ),
       explanation: {
         summary: decrease
           ? 'Hipoglucemias repetidas en la madrugada sugieren reducir la insulina basal.'
           : 'El tiempo sobre rango se mantiene por encima de la meta con la dosis actual.',
         factors: decrease
-          ? ['Dos lecturas por debajo del corte bajo en 24 horas', 'Tendencia descendente nocturna en la AGP']
-          : ['Tiempo sobre rango por encima de la meta del perfil', 'Picos después de la cena en siete de catorce días'],
+          ? [
+              'Dos lecturas por debajo del corte bajo en 24 horas',
+              'Tendencia descendente nocturna en la AGP',
+            ]
+          : [
+              'Tiempo sobre rango por encima de la meta del perfil',
+              'Picos después de la cena en siete de catorce días',
+            ],
         data_refs: [`window:14d`, `profile:${spec.profile.code}`],
       },
       model_version: 'baseline-rules-0.1',
@@ -496,7 +887,13 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
     if (!spec.secondaryDoctor) return [primary];
     return [
       primary,
-      { ...base, id: uuid('cb', spec.n), doctor_id: SECONDARY_DOCTOR.id, is_primary: false, doctor_name: SECONDARY_DOCTOR.fullName },
+      {
+        ...base,
+        id: uuid('cb', spec.n),
+        doctor_id: SECONDARY_DOCTOR.id,
+        is_primary: false,
+        doctor_name: SECONDARY_DOCTOR.fullName,
+      },
     ];
   });
 
@@ -513,17 +910,48 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
       simulated: false,
     })),
     {
-      id: patientId(IMPORTED_N), full_name: 'Isabela Naranjo Cruz', mrn: 'MRN-10025', document_last4: '4412',
-      account_status: 'IMPORTED', primary_doctor_id: null, assigned_doctor_count: 0, invitation_status: null, simulated: false,
+      id: patientId(IMPORTED_N),
+      full_name: 'Isabela Naranjo Cruz',
+      mrn: 'MRN-10025',
+      document_last4: '4412',
+      account_status: 'IMPORTED',
+      primary_doctor_id: null,
+      assigned_doctor_count: 0,
+      invitation_status: null,
+      simulated: false,
     },
   ];
 
+  const injectionFieldsOf = (n: number) => {
+    const seed = PATIENT_INJECTION_SEED[n];
+    return {
+      sex: seed?.sex ?? 'UNKNOWN',
+      birth_date: seed?.birth_date ?? null,
+      bmi: seed?.bmi ?? null,
+      pregnancy_status: seed?.pregnancy_status ?? 'UNKNOWN',
+    } as const;
+  };
+
+  /** Active plan of the overview: its insulin items only (the schedule of the treatment plan, minus the checks). */
   const planSummaryOf = (id: string, spec: PatientSpec) => {
     const plan = world.plans.get(id);
-    if (plan) return { id: plan.id, name: plan.name, version: plan.version, summary: plan.summary };
+    const schedule = (plan?.schedule ?? FALLBACK_SCHEDULE).filter(
+      (item) => item.insulin_kind !== null,
+    );
+    if (plan)
+      return {
+        id: plan.id,
+        name: plan.name,
+        version: plan.version,
+        summary: plan.summary,
+        schedule,
+      };
     return {
-      id: uuid('d3', spec.n), name: 'Basal-bolo adulto', version: 4,
+      id: uuid('d3', spec.n),
+      name: 'Basal-bolo adulto',
+      version: 4,
       summary: 'Insulina basal nocturna y bolos con las comidas principales.',
+      schedule,
     };
   };
 
@@ -547,6 +975,14 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
     reminders: new Map([[PATIENT_ACCOUNT.id, reminderSeed()]]),
     notes,
     messages: new Map([[PATIENT_ACCOUNT.id, messageSeed(now)]]),
+    insulinDoses: new Map([
+      [patientId(3), insulinDoseHistorySeed(now, 0)],
+      [patientId(1), insulinDoseHistorySeed(now, 1)],
+    ]),
+    injectionProfile: (id) => {
+      const spec = specOf(id);
+      return spec ? injectionProfileOf(spec.n, now) : null;
+    },
     nextId: (prefix) => {
       counter += 1;
       return uuid(prefix, counter);
@@ -559,7 +995,9 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
         email: person.email,
         role: person.role,
         status: 'ACTIVE',
-        patients_count: careAssignments.filter((a) => a.doctor_id === person.id && a.ended_at === null).length,
+        patients_count: careAssignments.filter(
+          (a) => a.doctor_id === person.id && a.ended_at === null,
+        ).length,
       })),
     findOwnReading: (id, clientReadingId) =>
       world.ownReadings.get(id)?.find((reading) => reading.client_reading_id === clientReadingId),
@@ -575,7 +1013,9 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
       const spec = specOf(id);
       if (!spec) return null;
       const own = world.ownReadings.get(id) ?? [];
-      return [...own, ...generatedFor(spec)].sort((a, b) => b.measured_at.localeCompare(a.measured_at));
+      return [...own, ...generatedFor(spec)].sort((a, b) =>
+        b.measured_at.localeCompare(a.measured_at),
+      );
     },
     triage(window) {
       return [...SPECS]
@@ -586,7 +1026,9 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
           risk_tier: spec.risk,
           risk_score: spec.score,
           flags: [...spec.reasons],
-          open_alerts_count: world.alerts.filter((a) => a.patient_id === patientId(spec.n) && a.status === 'OPEN').length,
+          open_alerts_count: world.alerts.filter(
+            (a) => a.patient_id === patientId(spec.n) && a.status === 'OPEN',
+          ).length,
           pending_recommendations_count: world.recommendations.filter(
             (r) => r.patient_id === patientId(spec.n) && r.status === 'PROPOSED',
           ).length,
@@ -604,17 +1046,21 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
       const spec = specOf(id);
       if (!spec) return null;
       return {
-        patient: { id, full_name: spec.fullName },
+        patient: { id, full_name: spec.fullName, ...injectionFieldsOf(spec.n) },
         target_profile: spec.profile,
         latest_readings: (world.readings(id) ?? []).slice(0, 12),
         metrics: metricsFrom(spec, generatedFor(spec), window, now),
         active_plan: planSummaryOf(id, spec),
         open_alerts: world.alerts.filter((a) => a.patient_id === id && a.status !== 'RESOLVED'),
-        pending_recommendations: world.recommendations.filter((r) => r.patient_id === id && r.status === 'PROPOSED'),
+        pending_recommendations: world.recommendations.filter(
+          (r) => r.patient_id === id && r.status === 'PROPOSED',
+        ),
         latest_forecast: {
-          mode: 'SHORT_TERM', generated_at: now.toISOString(),
+          mode: 'SHORT_TERM',
+          generated_at: now.toISOString(),
           trend: spec.lastValue < spec.profile.range_low_mg_dl ? 'FALLING' : 'STABLE',
-          is_fallback: true, fallback_reason: 'AI_TIMEOUT',
+          is_fallback: true,
+          fallback_reason: 'AI_TIMEOUT',
         },
         simulated: false,
       };

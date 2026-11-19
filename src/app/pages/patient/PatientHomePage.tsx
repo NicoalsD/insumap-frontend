@@ -10,6 +10,8 @@ import { ErrorState, LoadingState } from '@/ui';
 import { GlucoseRecorder } from './app/recording/GlucoseRecorder';
 import { PendingNotice } from './app/offline/PendingNotice';
 import { LatestLayer, DayLayer, WeekLayer, RemindersLayer } from './app/home/HomeLayers';
+import { InjectionLayer } from './app/injection/InjectionLayer';
+import { InsulinRecorder } from './app/injection/InsulinRecorder';
 import { greetingFor } from './app/patientFormat';
 import { useNow } from './app/useNow';
 import {
@@ -86,9 +88,14 @@ export function PatientHomePage() {
 
       <LatestLayer reading={latest} profile={profile} timeZone={timeZone} now={now} />
 
+      <InjectionLayer />
+
       <div className="patient-page__record">
         <PendingNotice />
-        <GlucoseRecorder thresholds={profile.thresholds} limits={limits.data ?? {}} />
+        <div className="patient-page__record-row">
+          <GlucoseRecorder thresholds={profile.thresholds} limits={limits.data ?? {}} />
+          <InsulinRecorder limits={limits.data ?? {}} />
+        </div>
       </div>
 
       <DayLayer readings={todayReadings} profile={profile} timeZone={timeZone} now={now} />

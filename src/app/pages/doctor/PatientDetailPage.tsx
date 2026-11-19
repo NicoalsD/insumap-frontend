@@ -10,6 +10,7 @@ import { TargetProfileViewModelAdapter } from '@/services/adapters/TargetProfile
 import type { MetricsWindow } from '@/services/dto/common';
 import { PageHeader } from '@/ui/PageHeader';
 import { ErrorState, LoadingState } from '@/ui/States';
+import { InjectionPanel } from './detail/InjectionPanel';
 import { AgpChart } from './detail/charts/AgpChart';
 import { AiSuggestionPanel } from './detail/AiSuggestionPanel';
 import { MessagesPanel, NotesPanel, PlanPanel } from './detail/CarePanels';
@@ -26,6 +27,7 @@ import { buildSurfaceGrid } from './detail/model/surface';
 import {
   usePatientAgp,
   usePatientAlerts,
+  usePatientInsulinDoses,
   usePatientMessages,
   usePatientMetrics,
   usePatientNotes,
@@ -81,6 +83,7 @@ export function PatientDetailPage() {
   const alerts = usePatientAlerts(patientId);
   const notes = usePatientNotes(patientId);
   const messages = usePatientMessages(patientId);
+  const insulinDoses = usePatientInsulinDoses(patientId);
 
   const dto = overview.data;
   const profile = useMemo(() => (dto ? profileAdapter.adapt(dto.target_profile) : null), [dto]);
@@ -178,6 +181,8 @@ export function PatientDetailPage() {
         timeZone={timeZone}
         pendingSuggestions={pendingSuggestions}
         openAlerts={openAlertDtos.length}
+        sex={dto.patient.sex}
+        bmi={dto.patient.bmi}
       />
       <div className="grid-12 patient-detail__grid">
         <div className="patient-detail__stack" style={span(MAIN_SPAN)}>
@@ -220,6 +225,27 @@ export function PatientDetailPage() {
             timeZone={timeZone}
           />
           <PlanPanel plan={dto.active_plan} />
+          {insulinDoses.isError ? (
+            <section className="panel" aria-labelledby="injection-error-title">
+              <header className="panel__header">
+                <h2 id="injection-error-title">{es.detail.injection.title}</h2>
+              </header>
+              <div className="panel__body">
+                <ErrorState error={insulinDoses.error} title={es.detail.injection.title} onRetry={() => void insulinDoses.refetch()} />
+              </div>
+            </section>
+          ) : insulinDoses.isPending || !metricsView ? (
+            <section className="panel" aria-labelledby="injection-loading-title">
+              <header className="panel__header">
+                <h2 id="injection-loading-title">{es.detail.injection.title}</h2>
+              </header>
+              <div className="panel__body">
+                <LoadingState />
+              </div>
+            </section>
+          ) : (
+            <InjectionPanel doses={insulinDoses.data} periodEnd={metricsView.periodTo} timeZone={timeZone} />
+          )}
           <NotesPanel patientId={patientId} notes={notes.data ?? []} canWrite timeZone={timeZone} />
           <MessagesPanel
             patientId={patientId}

@@ -7,6 +7,7 @@
 import { accessStrings } from './es.access';
 import { adminStrings } from './es.admin';
 import { adminImportsStrings } from './es.adminImports';
+import { bodyStrings } from './es.body';
 import { detailStrings } from './es.detail';
 import { doctorStrings } from './es.doctor';
 import { patientStrings } from './es.patient';
@@ -18,6 +19,7 @@ export const es = {
   admin: adminStrings,
   adminImports: adminImportsStrings,
   detail: detailStrings,
+  body: bodyStrings,
 
   app: {
     name: 'Insumap',
@@ -51,6 +53,7 @@ export const es = {
     readings: 'Mis lecturas',
     plan: 'Mi plan',
     messages: 'Mensajes',
+    assistant: 'Asistente',
     staff: 'Personal',
     designSystem: 'Sistema de diseño',
     account: 'Cuenta',

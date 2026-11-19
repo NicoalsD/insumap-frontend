@@ -4,7 +4,7 @@ import type { SessionViewModel } from '@/services/adapters/SessionViewModelAdapt
 import { useSession } from '@/state/useSession';
 import { Button } from '@/ui';
 
-/** Name, role and sign-out button, drawn on the petrol shell. */
+/** Name, role and sign-out button. */
 export function UserPanel({ session, inline = false }: { session: SessionViewModel; inline?: boolean }) {
   const { signOut } = useSession();
   return (
@@ -13,7 +13,7 @@ export function UserPanel({ session, inline = false }: { session: SessionViewMod
         <p className="shell-user__name">{session.fullName}</p>
         <p className="shell-user__role">{es.roles[session.role]}</p>
       </div>
-      <Button variant="shell" size="sm" icon={<LogOut size="1em" aria-hidden="true" />} onClick={() => { void signOut(); }}>
+      <Button variant="secondary" size="sm" icon={<LogOut size="1em" aria-hidden="true" />} onClick={() => { void signOut(); }}>
         {es.nav.logout}
       </Button>
     </div>

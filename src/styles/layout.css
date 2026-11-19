@@ -26,11 +26,13 @@
 
 .page-header h1 {
   font-family: var(--font-display);
-  font-size: var(--font-size-2xl);
+  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+  letter-spacing: -0.02em;
 }
 
 .page-header p {
   color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
   max-inline-size: var(--measure-prose);
 }
 
@@ -50,11 +52,13 @@
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
+  overflow: clip;
 }
 
 .panel__header {
   display: flex;
+  background: var(--color-surface-sunken);
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);

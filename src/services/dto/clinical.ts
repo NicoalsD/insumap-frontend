@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import type { FieldLimitsDto } from './meta';
 import { instant, pageOf, simulatedFlag, uuid, windowSchema } from './common';
+import { treatmentScheduleItemSchema, type TreatmentScheduleItemDto } from './care';
 import { targetProfileSchema } from './targetProfile';
+import { injectionPatientFieldsSchema } from './injection';
 
 /** Window metrics (API.md 8.8). `gmi`/`cv` are null for SMBG patients (no AGP). */
 export const glycemicMetricsSchema = z.object({
@@ -55,7 +57,14 @@ export const agpResponseSchema = z.object({
 
 export const READING_SOURCES = ['MANUAL', 'SMBG', 'CGM'] as const;
 /** Measurement contexts. The enumeration is not in API.md yet (G8); these values are proposed. */
-export const READING_CONTEXTS = ['FASTING', 'BEFORE_MEAL', 'AFTER_MEAL', 'BEDTIME', 'EXERCISE', 'OTHER'] as const;
+export const READING_CONTEXTS = [
+  'FASTING',
+  'BEFORE_MEAL',
+  'AFTER_MEAL',
+  'BEDTIME',
+  'EXERCISE',
+  'OTHER',
+] as const;
 
 /** `GET /readings`, `GET /patients/{id}/readings`. */
 export const glucoseReadingSchema = z.object({
@@ -74,7 +83,8 @@ export type GlucoseReadingDto = z.infer<typeof glucoseReadingSchema>;
 export const glucoseReadingPageSchema = pageOf(glucoseReadingSchema);
 
 /** Upper bound from a published field limit; a limit the API does not send adds no rule. */
-const limitOf = (limits: FieldLimitsDto, key: string): number => limits[key] ?? Number.MAX_SAFE_INTEGER;
+const limitOf = (limits: FieldLimitsDto, key: string): number =>
+  limits[key] ?? Number.MAX_SAFE_INTEGER;
 
 /**
  * Body of `POST /readings` (API.md 8.6). Lengths come from `GET /meta/field-limits`; the value is
@@ -175,7 +185,17 @@ export const triageRowSchema = z.object({
 export type TriageRowDto = z.infer<typeof triageRowSchema>;
 export const triagePageSchema = pageOf(triageRowSchema);
 
-const activePlanSchema = z.object({ id: uuid, name: z.string(), version: z.number().int(), summary: z.string() });
+/**
+ * Active plan inside the overview. `schedule` carries the insulin items of the plan, as
+ * `GET /patients/own/treatment-plan` does; it defaults to [] when the API omits it.
+ */
+const activePlanSchema = z.object({
+  id: uuid,
+  name: z.string(),
+  version: z.number().int(),
+  summary: z.string(),
+  schedule: z.array(treatmentScheduleItemSchema).default([]),
+});
 
 const forecastSchema = z.object({
   mode: z.enum(['SHORT_TERM', 'OVERNIGHT']),
@@ -187,7 +207,7 @@ const forecastSchema = z.object({
 
 /** `GET /patients/{id}/overview` (doctor). Reading the file never calls the AI. */
 export const patientOverviewSchema = z.object({
-  patient: z.object({ id: uuid, full_name: z.string() }),
+  patient: z.object({ id: uuid, full_name: z.string() }).extend(injectionPatientFieldsSchema.shape),
   target_profile: targetProfileSchema,
   latest_readings: z.array(glucoseReadingSchema),
   metrics: metricsResponseSchema,
@@ -198,11 +218,22 @@ export const patientOverviewSchema = z.object({
   simulated: simulatedFlag,
   data_source: z.literal('SIMULATED').optional(),
 });
-export type PatientOverviewDto = z.infer<typeof patientOverviewSchema>;
+/**
+ * Overview as the app builds it. `active_plan.schedule` is optional in the type (the schema defaults it
+ * to [] when parsing), so the app's literals do not have to spell it out; its items keep required fields.
+ */
+type ActivePlanDto = Omit<z.infer<typeof activePlanSchema>, 'schedule'> & {
+  schedule?: TreatmentScheduleItemDto[];
+};
+export type PatientOverviewDto = Omit<z.infer<typeof patientOverviewSchema>, 'active_plan'> & {
+  active_plan: ActivePlanDto | null;
+};
 
 /** `GET /patients/own/overview`: no recommendations and no forecast, the patient never sees AI doses. */
 export const ownOverviewSchema = patientOverviewSchema.omit({
   pending_recommendations: true,
   latest_forecast: true,
 });
-export type OwnOverviewDto = z.infer<typeof ownOverviewSchema>;
+export type OwnOverviewDto = Omit<z.infer<typeof ownOverviewSchema>, 'active_plan'> & {
+  active_plan: ActivePlanDto | null;
+};

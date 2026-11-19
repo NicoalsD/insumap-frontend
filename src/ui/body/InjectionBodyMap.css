@@ -1,0 +1,246 @@
+/* Injection-site map: the 3D stage with its floating labels, and the native radio list beside it. */
+
+/* The wrapper measures its own width: in a narrow rail the stage and the list stack, in a wide column they sit side by side. */
+.ibm-host {
+  container-type: inline-size;
+}
+
+.ibm {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 40rem) {
+  /* A tall stage (3:4) and a wide column for the list so names stay on one line. */
+  .ibm {
+    grid-template-columns: minmax(0, 22rem) minmax(16rem, 1fr);
+    align-items: start;
+  }
+}
+
+.ibm__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.ibm__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Vertical figure: 3:4, at least 30rem tall on desktop, the full width of the column on mobile. */
+.ibm__stage {
+  position: relative;
+  inline-size: 100%;
+  min-block-size: 30rem;
+  aspect-ratio: 3 / 4;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.ibm__canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  /* Vertical page scroll stays native; the canvas only takes horizontal gestures for taps. */
+  touch-action: pan-y;
+}
+
+.ibm__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ibm__labels:not([data-ready]) {
+  display: none;
+}
+
+.ibm__leaders {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+}
+
+.ibm__leader {
+  stroke: var(--color-text-muted);
+  stroke-width: 1.5px;
+}
+
+.ibm__label {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  translate: 0 -50%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.ibm__label[data-kind='suggested'] {
+  border-color: var(--color-primary);
+  color: var(--color-primary-subtle-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ibm__label[data-kind='selected'] {
+  border-color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ibm__label[hidden] {
+  display: none;
+}
+
+.ibm__options {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+.ibm__sites {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ibm__sites legend,
+.ibm__legend {
+  padding-block-end: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.ibm__legend {
+  margin: 0;
+}
+
+.ibm__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* The whole row is the target: at least the staff row height, 46 px (AGENTS.md 3.7). */
+  min-block-size: var(--row-height);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ibm__option:hover {
+  background: var(--color-surface-hover);
+}
+
+.ibm--readonly .ibm__option {
+  cursor: default;
+}
+
+.ibm--readonly .ibm__option:hover {
+  background: none;
+}
+
+.ibm__note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-block-end: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-subtle);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.ibm__note p {
+  margin: 0;
+}
+
+.ibm__readonly-spot {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.ibm__option:has(input:checked) {
+  background: var(--color-primary-subtle);
+}
+
+.ibm__option[data-state='AVOID']:has(input:disabled) {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.ibm__option-name {
+  min-inline-size: 0;
+}
+
+.ibm__option-state {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: end;
+}
+
+.ibm__option input[type='radio'] {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.ibm__spot-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.ibm__spot {
+  /* Touch target: 48 px tall (control-height-lg) on every spot button. */
+  min-block-size: var(--control-height-lg);
+  justify-content: center;
+}
+
+.ibm__hint,
+.ibm__notice {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.ibm__spots .ibm__hint {
+  margin-block-start: var(--space-2);
+}
+
+.ibm__notice {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.ibm :focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}

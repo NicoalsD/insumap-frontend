@@ -28,6 +28,8 @@ export const PERMISSIONS = {
   messagesUseOwn: 'messages.use_own',
   messagesUseAssigned: 'messages.use_assigned',
   usersRead: 'users.read',
+  recordsWriteOwn: 'records.write_own',
+  recordsReadOwn: 'records.read_own',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

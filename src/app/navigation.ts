@@ -6,6 +6,7 @@ import {
   FileUp,
   House,
   KeyRound,
+  Bot,
   MessageSquare,
   UserCog,
   Network,
@@ -54,5 +55,6 @@ export const NAV_ITEMS: Record<ShellRole, readonly NavItem[]> = {
     { path: '/patient/readings', label: es.nav.readings, icon: ClipboardList, permission: PERMISSIONS.glucoseReadOwn },
     { path: '/patient/plan', label: es.nav.plan, icon: CalendarClock },
     { path: '/patient/messages', label: es.nav.messages, icon: MessageSquare },
+    { path: '/patient/assistant', label: es.nav.assistant, icon: Bot },
   ],
 };
