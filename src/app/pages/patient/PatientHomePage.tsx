@@ -15,7 +15,7 @@ import { InsulinRecorder } from './app/injection/InsulinRecorder';
 import { greetingFor } from './app/patientFormat';
 import { useNow } from './app/useNow';
 import {
-  useAllOwnReadings,
+  useRecentOwnReadings,
   useOwnMetrics,
   useOwnOverview,
   useOwnReminders,
@@ -34,7 +34,7 @@ export function PatientHomePage() {
   const now = useNow();
   const limits = useFieldLimits();
   const overview = useOwnOverview(HOME_WINDOW);
-  const readings = useAllOwnReadings();
+  const readings = useRecentOwnReadings();
   const week = useOwnMetrics(WEEK_WINDOW);
   const reminders = useOwnReminders();
   const updateReminder = useUpdateReminder();
@@ -63,7 +63,7 @@ export function PatientHomePage() {
   }
 
   const data = overview.data;
-  const timeZone = data.metrics.timezone;
+  const timeZone = data.timezone;
   const latest = latestReading(data.latest_readings);
   const weekMetrics = week.data ? metricsAdapter.adapt(week.data) : null;
   const todayReadings: readonly GlucoseReadingDto[] = readings.data ?? [];

@@ -82,7 +82,7 @@ export function PatientPreview({ item, window, now }: PatientPreviewProps) {
         <section className="triage-preview__col" aria-label={es.doctor.triage.previewLastReading}>
           {item.lastReading ? (
             <>
-              <RangeRuler valueMgDl={item.lastReading.valueMgDl} thresholds={item.metrics.profile.thresholds} size="compact" showTarget={false} />
+              <RangeRuler valueMgDl={item.lastReading.valueMgDl} thresholds={item.thresholds} size="compact" showTarget={false} />
               <p className="triage-preview__time">
                 {es.doctor.triage.previewLastReading}: {formatElapsed(item.lastReading.measuredAt, now)}
               </p>

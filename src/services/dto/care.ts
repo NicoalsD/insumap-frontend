@@ -3,7 +3,7 @@ import { instant, pageOf, uuid } from './common';
 import { insulinKindSchema, siteCodeSchema } from './injection';
 
 /** `HH:MM` local time of day (API.md 8.7 leaves the schedule shape open; this is the proposal). */
-const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const timeOfDaySchema = z.string().regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/);
 
 /**
  * `GET /patients/own/treatment-plan` (API.md 8.7): the active plan in plain language. Doses are the

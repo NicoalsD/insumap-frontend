@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TriageRowViewModel } from '@/services/adapters/TriageViewModelAdapter';
-import { MetricsViewModelAdapter, type MetricsViewModel } from '@/services/adapters/MetricsViewModelAdapter';
-import type { MetricsResponseDto } from '@/services/dto/clinical';
+import { TargetProfileViewModelAdapter } from '@/services/adapters/TargetProfileViewModelAdapter';
 import {
   compareAlertsForRail,
   countSegments,
@@ -45,30 +44,7 @@ function item(overrides: {
   reviewed?: string | null;
   last?: { value: number; at: string } | null;
 }): TriageItem {
-  const dto: MetricsResponseDto = {
-    window: '14d',
-    period_from: '2026-11-05T00:00:00Z',
-    period_to: '2026-11-19T00:00:00Z',
-    timezone: 'America/Bogota',
-    target_profile: PROFILE,
-    data_sufficiency_pct: 90,
-    is_sufficient: overrides.sufficient ?? true,
-    confidence: 'NORMAL',
-    metrics: {
-      tir_pct: overrides.tir ?? 60,
-      tbr_l1_pct: 3,
-      tbr_l2_pct: 1,
-      tbr_pct: 4,
-      tar_l1_pct: 30,
-      tar_l2_pct: 6,
-      tar_pct: 36,
-      mean_glucose_mg_dl: 160,
-      gmi_pct: 7.1,
-      cv_pct: 30,
-      hypo_events_count: 0,
-    },
-  };
-  const metrics: MetricsViewModel = new MetricsViewModelAdapter().adapt(dto);
+  const thresholds = new TargetProfileViewModelAdapter().adapt(PROFILE).thresholds;
   return {
     patientId: overrides.name.toLowerCase().replaceAll(' ', '-'),
     fullName: overrides.name,
@@ -77,7 +53,8 @@ function item(overrides: {
     reasons: [],
     openAlertsCount: overrides.alerts ?? 0,
     pendingRecommendationsCount: overrides.ai ?? 0,
-    metrics,
+    tirPct: overrides.sufficient === false ? null : (overrides.tir ?? 60),
+    thresholds,
     lastReading:
       overrides.last === null || overrides.last === undefined
         ? null

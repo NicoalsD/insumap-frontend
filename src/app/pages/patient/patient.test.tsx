@@ -122,7 +122,7 @@ describe('patient readings, plan and messages', () => {
   it('shows the active plan in plain language with the prescribed times', async () => {
     const { router, container } = await signInAsPatient();
     await router.navigate('/patient/plan');
-    expect(await screen.findByRole('heading', { name: 'Plan basal-bolo' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^Versión \d+/ })).toBeInTheDocument();
     expect(screen.getByText('21:30')).toBeInTheDocument();
     expect(screen.getByText('Dosis indicada: 18 unidades')).toBeInTheDocument();
     // The shared medical notice of the footer is outside this screen; the plan itself never labels AI.

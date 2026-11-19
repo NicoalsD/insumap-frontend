@@ -32,7 +32,7 @@ export function PlanPanel({ plan }: { readonly plan: ActivePlan | null }) {
       <div className="panel__body care-panel">
         {plan ? (
           <>
-            <p className="care-panel__name">{plan.name}</p>
+            {plan.name === '' ? null : <p className="care-panel__name">{plan.name}</p>}
             <p className="care-panel__meta">{format(es.detail.plan.version, { version: plan.version })}</p>
             <p>{plan.summary}</p>
             {items.length > 0 ? (

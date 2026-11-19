@@ -8,9 +8,11 @@ import {
 import { apiUrl } from '@/services/http/apiUrl';
 import { HTTP_STATUS } from '@/services/http/httpStatus';
 import { EMERGENCY_NOTICE, type ReminderRecord } from '../fixtures/care';
+import { PERMISSIONS } from '@/core/auth/permissions';
 import { apiError, paginate, readBody, validationError } from '../http';
 import type { MockState } from '../MockState';
 import { guard } from './guard';
+import { wirePlan } from '../wire';
 
 /**
  * Permissions of the patient and messaging endpoints (API.md 8.7, 8.11, 8.12). They are not in
@@ -57,7 +59,14 @@ export function careHandlers(state: MockState) {
       const result = guard(state, request, CARE_PERMISSIONS.treatmentPlanReadOwn);
       if ('response' in result) return result.response;
       const plan = state.world.plans.get(result.account.id);
-      return plan ? HttpResponse.json(plan) : apiError('NOT_FOUND');
+      return plan ? HttpResponse.json(wirePlan(plan)) : apiError('NOT_FOUND');
+    }),
+
+    http.get(apiUrl('/treatment-plans/:plan_id'), ({ request, params }) => {
+      const result = guard(state, request, PERMISSIONS.patientRead);
+      if ('response' in result) return result.response;
+      const plan = state.world.planById(String(params['plan_id']));
+      return plan ? HttpResponse.json(wirePlan(plan)) : apiError('NOT_FOUND');
     }),
 
     http.get(apiUrl('/reminders'), ({ request }) => {

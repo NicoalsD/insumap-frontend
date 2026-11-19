@@ -12,6 +12,7 @@ import { apiError, paginate, readBody, validationError } from '../http';
 import { planSitesFor, suggestInjectionSite, type InjectionHistoryEntry } from '../injectionRules';
 import type { MockState } from '../MockState';
 import { guard } from './guard';
+import { wireTimelineDose } from '../wire';
 
 /** Permissions of the patient's own insulin records (API.md, `records.*_own`). */
 export const INJECTION_PERMISSIONS = {
@@ -120,14 +121,20 @@ export function injectionHandlers(state: MockState) {
       return HttpResponse.json(page(newestFirst(doses), new URL(request.url)));
     }),
 
-    // Doctor view: the same history, with the sites used (API.md 8.6 style, assigned patients only).
-    http.get(apiUrl('/patients/:patient_id/insulin-doses'), ({ request, params }) => {
+    // Doctor view: the record timeline filtered to insulin, the way the real API serves it
+    // (assigned patients only). Each event carries the kind, units and site in `data`.
+    http.get(apiUrl('/patients/:patient_id/timeline'), ({ request, params }) => {
       const result = guard(state, request, PERMISSIONS.patientRead);
       if ('response' in result) return result.response;
       const patient = String(params['patient_id']);
       if (!state.world.isAssigned(patient)) return apiError('NOT_FOUND');
       const doses = state.world.insulinDoses.get(patient) ?? [];
-      return HttpResponse.json(page(newestFirst(doses), new URL(request.url)));
+      const paged = page(newestFirst(doses), new URL(request.url));
+      return HttpResponse.json({
+        items: paged.items.map(wireTimelineDose),
+        next_cursor: paged.next_cursor,
+        simulated: false,
+      });
     }),
   ];
 }

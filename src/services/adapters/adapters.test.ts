@@ -4,7 +4,6 @@ import { ADULT_STANDARD } from '@/mocks/fixtures/profiles';
 import { createWorld, patientId } from '@/mocks/fixtures/world';
 import type { CurrentUserDto } from '../dto/auth';
 import { AlertViewModelAdapter } from './AlertViewModelAdapter';
-import { adaptAll } from './ViewModelAdapter';
 import { ImportBatchViewModelAdapter, ImportRowViewModelAdapter } from './ImportViewModelAdapters';
 import { MetricsViewModelAdapter, windowToDays } from './MetricsViewModelAdapter';
 import { ReadingViewModelAdapter } from './ReadingViewModelAdapter';
@@ -69,7 +68,11 @@ describe('MetricsViewModelAdapter (P06 Adapter)', () => {
 
 describe('TriageViewModelAdapter (P06 Adapter)', () => {
   it('classifies the last reading with the patient own thresholds', () => {
-    const rows = adaptAll(new TriageViewModelAdapter(), world.triage('14d'));
+    const adapter = new TriageViewModelAdapter();
+    const thresholds = new TargetProfileViewModelAdapter().adapt(ADULT_STANDARD).thresholds;
+    const rows = world
+      .triage('14d')
+      .map((row) => adapter.adapt(row, { thresholds, pendingRecommendationsCount: row.pending_recommendations_count }));
     expect(rows[0]?.fullName).toBe('Camila Restrepo Ossa');
     expect(rows[0]?.lastReading?.state).toBe('LOW');
     const hyper = rows.find((r) => r.patientId === patientId(2));

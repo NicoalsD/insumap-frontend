@@ -14,7 +14,7 @@ const SEGMENT_PREDICATES: Readonly<Record<SegmentId, (row: TriageItem) => boolea
   openAlerts: (row) => row.openAlertsCount > 0,
   aiPending: (row) => row.pendingRecommendationsCount > 0,
   unreviewed: (row) => row.reviewedAt === null,
-  insufficient: (row) => !row.metrics.timeInRanges.isSufficient,
+  insufficient: (row) => row.tirPct === null,
 };
 
 export function matchesSegment(row: TriageItem, segment: SegmentId): boolean {
@@ -98,7 +98,7 @@ function sortKey(row: TriageItem, column: TriageSortColumn): number | string | n
     case 'risk':
       return RISK_RANK[row.riskTier] * SCORE_WEIGHT + row.riskScore;
     case 'tir':
-      return row.metrics.timeInRanges.isSufficient ? row.metrics.tirPct : null;
+      return row.tirPct;
     case 'last':
       return row.lastReading?.measuredAt.getTime() ?? null;
     case 'alerts':
