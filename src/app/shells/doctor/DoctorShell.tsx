@@ -4,20 +4,9 @@ import { es } from '@/i18n/es';
 import { useSession } from '@/state/useSession';
 import { Button, MedicalDisclaimer } from '@/ui';
 import type { NavItem } from '../../navigation';
+import { initialsOf } from './initials';
 import { PatientSearch } from './PatientSearch';
 import './DoctorShell.css';
-
-const INITIALS = 2;
-
-/** Two initials of a name for the avatar ("Marta Quintero" → "MQ"). */
-export function initialsOf(fullName: string): string {
-  return fullName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, INITIALS)
-    .map((part) => part.charAt(0).toLocaleUpperCase('es-CO'))
-    .join('');
-}
 
 /**
  * Shell of the doctor: a fixed side rail (brand, who is signed in and the navigation) and, on the

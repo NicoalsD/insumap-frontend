@@ -1,7 +1,7 @@
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
 import { Link } from 'react-router';
-import { initialsOf } from '@/app/shells/doctor/DoctorShell';
+import { initialsOf } from '@/app/shells/doctor/initials';
 import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import { Badge } from '@/ui/Badge';
