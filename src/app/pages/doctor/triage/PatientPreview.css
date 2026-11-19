@@ -1,6 +1,8 @@
 .triage-preview {
   display: grid;
   gap: var(--space-4);
+  /* Its own container: beside the map it is narrow, under the queue it is wide. */
+  container-type: inline-size;
 }
 
 .triage-preview__header {
@@ -67,9 +69,10 @@
   font-size: var(--font-size-md);
 }
 
-@container (max-width: 64rem) {
+@container (max-width: 44rem) {
   .triage-preview__grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
   }
 }
 

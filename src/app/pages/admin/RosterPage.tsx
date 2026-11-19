@@ -10,7 +10,7 @@ import { IssueCredentialsDialog, type IssueTarget } from './console/IssueCredent
 import { PatientAdminViewModelAdapter, ACCOUNT_STATUSES, type AccountStatus, type PatientRowViewModel } from './console/PatientAdminViewModelAdapter';
 import { CareAssignmentViewModelAdapter } from './console/CareAssignmentViewModelAdapter';
 import { doctorNameMap } from './console/careTeamSummary';
-import { useAssignmentWalk, useClinic, usePatientPages, usePatientWalk } from './console/adminQueries';
+import { staffNames, useAssignmentWalk, useClinic, usePatientPages, usePatientWalk, useStaffWalk } from './console/adminQueries';
 import {
   countPatients,
   matchesPatientFilters,
@@ -62,9 +62,10 @@ export function RosterPage() {
   const [issueResend, setIssueResend] = useState(false);
 
   const filters = useMemo<PatientFilters>(() => ({ ...filtersFromUrl(params), search }), [params, search]);
+  const staff = useStaffWalk();
   const doctorNames = useMemo(
-    () => doctorNameMap(assignmentRows(assignments.data)),
-    [assignments.data],
+    () => doctorNameMap(assignmentRows(assignments.data, staffNames(staff.data))),
+    [assignments.data, staff.data],
   );
   const adapter = useMemo(() => new PatientAdminViewModelAdapter(doctorNames), [doctorNames]);
   const pageRows = useMemo(
@@ -346,6 +347,7 @@ function filtersFromUrl(params: URLSearchParams): PatientFilters {
   };
 }
 
-function assignmentRows(dtos: readonly CareAssignmentDto[] | undefined) {
-  return (dtos ?? []).map((dto) => new CareAssignmentViewModelAdapter().adapt(dto));
+function assignmentRows(dtos: readonly CareAssignmentDto[] | undefined, doctors: ReadonlyMap<string, string>) {
+  const adapter = new CareAssignmentViewModelAdapter(new Map(), doctors);
+  return (dtos ?? []).map((dto) => adapter.adapt(dto));
 }

@@ -55,6 +55,27 @@ export function clinicalHandlers(state: MockState) {
       return 'response' in result ? result.response : HttpResponse.json(DEMO_CLINIC);
     }),
 
+    http.post(apiUrl('/patients/:patient_id/clinical-summaries'), ({ request, params }) => {
+      const result = guard(state, request, PERMISSIONS.patientRead);
+      if ('response' in result) return result.response;
+      const id = String(params['patient_id']);
+      const metrics = state.world.metrics(id, DEFAULT_WINDOW);
+      if (!metrics || !state.world.isAssigned(id)) return apiError('NOT_FOUND');
+      const text = `TIR ${metrics.metrics.tir_pct.toFixed(1)} % (meta ${String(metrics.target_profile.tir_min_pct)} %). Episodios de hipoglucemia: ${String(metrics.metrics.hypo_events_count)}.`;
+      return HttpResponse.json(
+        {
+          id: state.world.nextId('cs'),
+          patient_id: id,
+          summary_text: text,
+          sections: [{ title: 'Resumen del periodo', text, refs: [] }],
+          is_fallback: true,
+          generated_at: new Date().toISOString(),
+          label: 'Resumen generado con la plantilla fija; verifica con los datos.',
+        },
+        { status: HTTP_STATUS.CREATED },
+      );
+    }),
+
     http.post(apiUrl('/dashboard/patients/:patient_id/review'), ({ request, params }) => {
       const result = guard(state, request, PERMISSIONS.triageRead);
       if ('response' in result) return result.response;

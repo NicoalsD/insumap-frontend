@@ -89,6 +89,7 @@ export const patientStrings = {
     title: 'Tu semana',
     inRangeLabel: 'En rango',
     percent: '{value} %',
+    percentSign: '%',
     goal: 'Meta: {goal} % o más del día en rango.',
     insufficient: 'Todavía no hay suficientes datos de esta semana.',
     bar: 'Tiempo en rango de esta semana: {value} %',

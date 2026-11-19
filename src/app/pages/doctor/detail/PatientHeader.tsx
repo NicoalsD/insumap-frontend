@@ -6,7 +6,7 @@ import { rangeTone } from '@/ui/rangeTone';
 import type { ReadingViewModel } from '@/services/adapters/ReadingViewModelAdapter';
 import type { RiskTier } from './types';
 import type { PatientSex } from '@/services/dto/injection';
-import { formatClockTime, formatDateTime } from './format';
+import { formatDateTime } from './format';
 import { NOTE_FIELD_ID } from './constants';
 
 export interface PatientHeaderProps {
@@ -82,12 +82,9 @@ export function PatientHeader(props: PatientHeaderProps) {
             {lastReading ? (
               <>
                 <Badge tone={rangeTone(lastReading.state)}>
-                  {format(es.detail.header.lastReadingValue, {
-                    value: lastReading.valueMgDl,
-                    time: formatDateTime(lastReading.measuredAt, timeZone),
-                  })}
+                  {format(es.detail.header.lastReadingValue, { value: lastReading.valueMgDl })}
                 </Badge>
-                <span className="detail-header__clock">{formatClockTime(lastReading.measuredAt, timeZone)}</span>
+                <span className="detail-header__clock">{formatDateTime(lastReading.measuredAt, timeZone)}</span>
               </>
             ) : (
               es.detail.header.noReading

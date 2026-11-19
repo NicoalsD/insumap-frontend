@@ -59,3 +59,11 @@ Decisión del usuario: médico, paciente, admin y acceso usan el mismo mundo de 
 - Lectura: el médico escanea en F (lo más urgente arriba a la izquierda, columna ancha de 8 a 9 columnas y riel derecho de 3 a 4 para alertas e IA); el paciente lee en pastel de capas (una sola columna de bandas con título); el admin en tablas con filtros a la izquierda.
 - 3D (solo detalle del paciente del médico): superficie de glucosa día × hora × mg/dL con el plano de la meta del perfil, junto a la AGP 2D y una tabla equivalente; cuerpo con sensor. Carga diferida, estático con `prefers-reduced-motion`.
 - Se eliminó el mundo petróleo. Sin "demo" ni "datos simulados" en ninguna pantalla.
+
+## Actualización 2026-11-19 (noche): pantalla completa, 3D e interacción
+Decisión del usuario: la app usa toda la pantalla, usa Three.js y es muy interactiva.
+- Sin ancho máximo de contenido (`--content-max: none`); solo el margen lateral de la landing (`--page-pad`).
+- Acceso: pantalla partida, formulario a la izquierda y el cuerpo 3D de la landing a la derecha.
+- Médico: shell propio con barra lateral (perfil, navegación), barra superior con migas y buscador de pacientes. El panel abre con un banner cobalto (saludo, indicadores que filtran la cola y el cuerpo 3D), tarjeta de riesgo en tinta noche, carrusel de pacientes prioritarios y asistente clínico con los componentes de chat de IA. Luego el mapa 3D de pacientes (TIR × última glucosa × riesgo sobre la banda objetivo), la vista previa, la cola y las alertas.
+- Paciente: inicio en dos columnas; el cuerpo 3D de inyección a la derecha.
+- Pendiente: cuerpos humanos realistas de hombre y mujer (propuesta: MakeHuman CC0 exportado a GLB), a la espera de la aprobación del usuario.

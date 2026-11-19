@@ -13,7 +13,7 @@ export const detailStrings = {
     sourceManual: 'Manual',
     sourceNone: 'Sin lecturas',
     lastReading: 'Última lectura',
-    lastReadingValue: '{value} mg/dL, {time}',
+    lastReadingValue: '{value} mg/dL',
     noReading: 'Sin lecturas registradas',
     risk: 'Riesgo',
     riskUnknown: 'Sin clasificar',

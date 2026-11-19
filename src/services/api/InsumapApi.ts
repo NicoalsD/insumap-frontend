@@ -36,6 +36,7 @@ import {
 } from '../dto/care';
 import {
   alertPageSchema,
+  clinicalSummarySchema,
   alertSchema,
   glucoseReadingPageSchema,
   glucoseReadingSchema,
@@ -299,6 +300,16 @@ export class InsumapApi {
 
   getTriage(query: QueryParams = {}) {
     return this.request({ method: 'GET', path: '/dashboard/triage', query, schema: wireTriageSchema });
+  }
+
+  /** AI summary of the last `periodDays` days (the template one when the model is not available). */
+  createClinicalSummary(patientId: string, periodDays: number) {
+    return this.request({
+      method: 'POST',
+      path: `/patients/${patientId}/clinical-summaries`,
+      body: { period_days: periodDays },
+      schema: clinicalSummarySchema,
+    });
   }
 
   /** Marks the patient as reviewed by the doctor for the window; the triage then lists it as reviewed. */

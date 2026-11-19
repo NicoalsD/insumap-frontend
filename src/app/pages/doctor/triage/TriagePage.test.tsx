@@ -29,7 +29,7 @@ async function signInAsDoctor(path?: string) {
   await userEvent.type(screen.getByLabelText(es.access.login.password), DOCTOR_ACCOUNT.password);
   await userEvent.click(screen.getByRole('button', { name: es.access.login.submit }));
   await userEvent.type(await screen.findByLabelText(es.access.mfa.code), DEMO_TOTP_CODE);
-  await screen.findByRole('heading', { level: 1, name: es.nav.triage });
+  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ });
   if (path) await view.router.navigate(path);
   return view;
 }

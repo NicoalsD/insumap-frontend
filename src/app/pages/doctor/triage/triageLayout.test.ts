@@ -8,20 +8,21 @@ const FULL_SPAN = 12;
 const ALL = new Set<string>(Object.values(PERMISSIONS));
 
 describe('triage layout (P08 Composite)', () => {
-  it('puts the queue first, then the open alerts and the preview', () => {
+  it('opens with the map and the preview, then the queue and the open alerts', () => {
     const layout = buildTriageLayout();
     expect(layout).toBeInstanceOf(WidgetGroup);
     expect(layout.layout).toBe('stack');
     expect(layout.leaves().map((leaf) => leaf.id)).toEqual([
+      TRIAGE_WIDGET.map,
+      TRIAGE_WIDGET.preview,
       TRIAGE_WIDGET.queue,
       TRIAGE_WIDGET.openAlerts,
-      TRIAGE_WIDGET.preview,
     ]);
   });
 
-  it('gives the queue the full width and shares the next row between alerts and preview', () => {
+  it('gives the queue the full width and shares the first row between map and preview', () => {
     expect(TRIAGE_SPANS[TRIAGE_WIDGET.queue]?.span).toBe(FULL_SPAN);
-    const shared = (TRIAGE_SPANS[TRIAGE_WIDGET.openAlerts]?.span ?? 0) + (TRIAGE_SPANS[TRIAGE_WIDGET.preview]?.span ?? 0);
+    const shared = (TRIAGE_SPANS[TRIAGE_WIDGET.map]?.span ?? 0) + (TRIAGE_SPANS[TRIAGE_WIDGET.preview]?.span ?? 0);
     expect(shared).toBe(FULL_SPAN);
   });
 
@@ -29,7 +30,7 @@ describe('triage layout (P08 Composite)', () => {
     const noAlerts = new Set(ALL);
     noAlerts.delete(PERMISSIONS.alertsRead);
     const pruned = buildTriageLayout().visibleFor(noAlerts);
-    expect(pruned?.leaves().map((leaf) => leaf.id)).toEqual([TRIAGE_WIDGET.queue, TRIAGE_WIDGET.preview]);
+    expect(pruned?.leaves().map((leaf) => leaf.id)).toEqual([TRIAGE_WIDGET.map, TRIAGE_WIDGET.preview, TRIAGE_WIDGET.queue]);
     expect(TRIAGE_SPANS[TRIAGE_WIDGET.queue]?.span).toBe(FULL_SPAN);
   });
 

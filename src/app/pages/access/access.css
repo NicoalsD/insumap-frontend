@@ -5,30 +5,94 @@
  */
 .access {
   display: grid;
-  place-items: center;
   min-block-size: 100dvh;
-  padding: var(--space-6) var(--space-4) var(--space-12);
   background: var(--color-canvas);
+}
+
+/* With WebGL: two halves of the screen, form left and 3D body right (the landing's hero). */
+.access[data-stage] {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+
+.access__column {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--page-pad) var(--space-12);
 }
 
 .access__card {
   inline-size: 100%;
-  max-inline-size: 28rem;
+  max-inline-size: 30rem;
   display: grid;
   gap: var(--space-6);
   padding: var(--space-8);
   background: var(--color-surface);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-border-soft);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .access__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  max-inline-size: 30rem;
   font-family: var(--font-display);
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-heavy);
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-primary);
+  font-size: var(--font-size-lead);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.access__mark {
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: #ffc62e;
+}
+
+.access__stage {
+  position: relative;
+  min-block-size: 100dvh;
+  background: var(--color-surface-sunken);
+  border-start-start-radius: var(--radius-lg);
+  border-end-start-radius: var(--radius-lg);
+  overflow: clip;
+}
+
+.access__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.access__canvas canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  touch-action: pan-y;
+}
+
+.access__canvas > button {
+  position: absolute;
+  inset-block-end: var(--space-6);
+  inset-inline-end: var(--space-6);
+  z-index: 2;
+}
+
+@media (max-width: 64rem) {
+  .access[data-stage] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .access__stage {
+    display: none;
+  }
 }
 
 .access__header {
@@ -38,8 +102,11 @@
 
 .access__header h1 {
   font-family: var(--font-display);
-  font-size: var(--font-size-2xl);
-  line-height: 1.15;
+  font-size: var(--font-size-title);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
 }
 
 .access__description {

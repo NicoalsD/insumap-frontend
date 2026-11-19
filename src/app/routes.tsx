@@ -8,6 +8,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { RequireAccess } from './RequireAccess';
 import { PatientShell } from './shells/PatientShell';
 import { StaffShell } from './shells/StaffShell';
+import { DoctorShell } from './shells/doctor/DoctorShell';
 
 /** Route-level code splitting: every screen loads on demand, so the 3D and charts stay out of the first paint. */
 function screen<Name extends string>(load: () => Promise<Record<Name, React.ComponentType>>, name: Name) {
@@ -38,7 +39,7 @@ export const appRoutes: RouteObject[] = [
         element: <RequireAccess roles={['DOCTOR']} />,
         children: [
           {
-            element: <StaffShell items={NAV_ITEMS.DOCTOR} />,
+            element: <DoctorShell items={NAV_ITEMS.DOCTOR} />,
             children: [
               { index: true, element: <Navigate to="triage" replace /> },
               {

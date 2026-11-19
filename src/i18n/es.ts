@@ -43,7 +43,7 @@ export const es = {
 
   nav: {
     main: 'Navegación principal',
-    triage: 'Triage',
+    triage: 'Panel',
     alerts: 'Alertas',
     patients: 'Pacientes',
     imports: 'Importación',

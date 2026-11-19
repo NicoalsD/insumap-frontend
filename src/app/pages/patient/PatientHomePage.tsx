@@ -51,7 +51,12 @@ export function PatientHomePage() {
     if (overview.isError) {
       return (
         <div className="patient-page">
-          <ErrorState error={overview.error} onRetry={() => { void overview.refetch(); }} />
+          <ErrorState
+            error={overview.error}
+            onRetry={() => {
+              void overview.refetch();
+            }}
+          />
         </div>
       );
     }
@@ -74,8 +79,8 @@ export function PatientHomePage() {
   };
 
   return (
-    <div className="patient-page">
-      <header className="patient-page__head">
+    <div className="patient-page patient-home">
+      <header className="patient-page__head patient-home__head">
         <h1 className="patient-page__title">{greetingFor(now, session.fullName)}</h1>
         <p className="patient-page__lead">{es.patient.greeting.subtitle}</p>
       </header>
@@ -86,38 +91,47 @@ export function PatientHomePage() {
         </p>
       ) : null}
 
-      <LatestLayer reading={latest} profile={profile} timeZone={timeZone} now={now} />
+      <div className="patient-home__main">
+        <LatestLayer reading={latest} profile={profile} timeZone={timeZone} now={now} />
 
-      <InjectionLayer />
-
-      <div className="patient-page__record">
-        <PendingNotice />
-        <div className="patient-page__record-row">
-          <GlucoseRecorder thresholds={profile.thresholds} limits={limits.data ?? {}} />
-          <InsulinRecorder limits={limits.data ?? {}} />
+        <div className="patient-page__record">
+          <PendingNotice />
+          <div className="patient-page__record-row">
+            <GlucoseRecorder thresholds={profile.thresholds} limits={limits.data ?? {}} />
+            <InsulinRecorder limits={limits.data ?? {}} />
+          </div>
         </div>
+
+        <DayLayer readings={todayReadings} profile={profile} timeZone={timeZone} now={now} />
+
+        {weekMetrics ? (
+          <WeekLayer
+            tirPct={weekMetrics.tirPct}
+            isSufficient={weekMetrics.timeInRanges.isSufficient}
+            goalPct={profile.goals.tirMinPct}
+          />
+        ) : null}
+
+        {reminders.isError ? (
+          <ErrorState
+            error={reminders.error}
+            onRetry={() => {
+              void reminders.refetch();
+            }}
+          />
+        ) : (
+          <RemindersLayer
+            reminders={reminders.data ?? []}
+            onToggle={toggle}
+            pendingId={updateReminder.isPending ? updateReminder.variables.reminderId : null}
+            errorMessage={updateReminder.isError ? es.patient.reminders.error : null}
+          />
+        )}
       </div>
 
-      <DayLayer readings={todayReadings} profile={profile} timeZone={timeZone} now={now} />
-
-      {weekMetrics ? (
-        <WeekLayer
-          tirPct={weekMetrics.tirPct}
-          isSufficient={weekMetrics.timeInRanges.isSufficient}
-          goalPct={profile.goals.tirMinPct}
-        />
-      ) : null}
-
-      {reminders.isError ? (
-        <ErrorState error={reminders.error} onRetry={() => { void reminders.refetch(); }} />
-      ) : (
-        <RemindersLayer
-          reminders={reminders.data ?? []}
-          onToggle={toggle}
-          pendingId={updateReminder.isPending ? updateReminder.variables.reminderId : null}
-          errorMessage={updateReminder.isError ? es.patient.reminders.error : null}
-        />
-      )}
+      <div className="patient-home__side">
+        <InjectionLayer />
+      </div>
     </div>
   );
 }
@@ -126,7 +140,8 @@ export function PatientHomePage() {
 function latestReading(items: readonly GlucoseReadingDto[]): GlucoseReadingDto | null {
   let newest: GlucoseReadingDto | null = null;
   for (const item of items) {
-    if (newest === null || Date.parse(item.measured_at) > Date.parse(newest.measured_at)) newest = item;
+    if (newest === null || Date.parse(item.measured_at) > Date.parse(newest.measured_at))
+      newest = item;
   }
   return newest;
 }
