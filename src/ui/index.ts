@@ -1,6 +1,7 @@
 export { Badge, type BadgeProps, type BadgeTone } from './Badge';
 export { rangeTone } from './rangeTone';
 export { Button, type ButtonProps } from './Button';
+export { ButtonLink, type ButtonLinkProps } from './ButtonLink';
 export { DataTable, type DataTableColumn, type DataTableProps } from './DataTable';
 export { ErrorBoundary } from './ErrorBoundary';
 export { MedicalDisclaimer, SimulatedNotice } from './Notices';

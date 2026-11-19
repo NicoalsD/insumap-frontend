@@ -59,6 +59,7 @@ export const es = {
     forbiddenTitle: 'No tienes acceso a esta sección',
     forbiddenBody: 'Tu rol no tiene permiso para ver esta página. Si crees que es un error, habla con el administrador de tu clínica.',
     backHome: 'Ir al inicio',
+    pendingScreen: 'Esta pantalla se construye en la siguiente fase.',
   },
 
   validation: {
@@ -146,6 +147,7 @@ export const es = {
     demoRoleLabel: 'Entrar como',
     sessionExpired: 'Tu sesión terminó. Inicia sesión de nuevo.',
     loginTitle: 'Iniciar sesión',
+    demoUnavailable: 'La entrada a la demo no está disponible en esta versión.',
     loginPending: 'La pantalla de inicio de sesión se construye en la siguiente fase.',
   },
 
