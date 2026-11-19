@@ -1,0 +1,292 @@
+/*
+ * Insumap design tokens. Single source for color, type, space, shape, depth, motion and layers.
+ * Light is the default theme; dark applies only under prefers-color-scheme: dark, with its own
+ * values (never an inverted copy). Documented in .agents/design-theme.md.
+ *
+ * Colors are hex on purpose: src/styles/tokens.contrast.test.ts parses this file and checks
+ * every text/surface pair at WCAG 2.2 AA.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Neutrals: near-white tinted toward petrol ---- */
+  --color-canvas: #f3f7f7;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #e9f0f1;
+  --color-surface-hover: #eef4f5;
+  --color-border: #d3dfe1;
+  --color-border-strong: #6f878b;
+  --color-text: #12242a;
+  --color-text-muted: #485d62;
+  --color-text-placeholder: #5c7075;
+  --color-text-disabled: #7d8f93;
+
+  /* ---- Shell: deep petrol ink that owns staff navigation ---- */
+  --color-shell: #0c343c;
+  --color-shell-raised: #124651;
+  --color-shell-border: #1e5762;
+  --color-shell-text: #e8f3f4;
+  --color-shell-text-muted: #a9c7cb;
+  --color-shell-active: #1b5d69;
+  --color-shell-focus: #8fdde6;
+
+  /* ---- Primary action: brighter, saturated petrol ---- */
+  --color-primary: #006e7a;
+  --color-primary-hover: #005a64;
+  --color-primary-active: #004a52;
+  --color-primary-text: #ffffff;
+  --color-primary-subtle: #dcefef;
+  --color-primary-subtle-text: #00515a;
+  --color-link: #006370;
+
+  /* ---- Focus, selection, caret ---- */
+  --color-focus: #00838f;
+  --color-selection: #b8e3e6;
+  --color-selection-text: #0a1f24;
+  --color-caret: #006e7a;
+
+  /* ---- Scrollbars (thumb >= 3:1 against track and surface) ---- */
+  --color-scrollbar-thumb: #6f878b;
+  --color-scrollbar-track: #e9f0f1;
+
+  /* ---- Status (generic UI feedback) ---- */
+  --color-success: #1d6b38;
+  --color-success-subtle: #e2f2e6;
+  --color-warning: #7a4f00;
+  --color-warning-subtle: #fbf0d6;
+  --color-info: #00596a;
+  --color-info-subtle: #ddeff2;
+
+  /* ---- Critical: alert red, reserved for open alerts ---- */
+  --color-critical: #b3261e;
+  --color-critical-hover: #94201a;
+  --color-critical-text: #ffffff;
+  --color-critical-subtle: #fbe8e6;
+  --color-critical-subtle-text: #8c1d17;
+
+  /* ---- Simulated-data notice ---- */
+  --color-simulated: #fff3cd;
+  --color-simulated-text: #5c3d00;
+  --color-simulated-border: #c99a2e;
+
+  /*
+   * ---- Glucose range states (International TIR consensus colors) ----
+   * fill: segment/marker paint (>= 3:1 against surface)
+   * on:   text drawn on the fill (>= 4.5:1)
+   * text: text drawn on surfaces (>= 4.5:1)
+   * subtle: badge background (text token on it >= 4.5:1)
+   * Numeric thresholds never live here: they come from the API target profile.
+   */
+  --color-range-very-low: #7d1328;
+  --color-range-very-low-on: #ffffff;
+  --color-range-very-low-text: #7d1328;
+  --color-range-very-low-subtle: #f9e3e7;
+
+  --color-range-low: #c62f3c;
+  --color-range-low-on: #ffffff;
+  --color-range-low-text: #a8222e;
+  --color-range-low-subtle: #fbe7e8;
+
+  --color-range-in-range: #2a7d43;
+  --color-range-in-range-on: #ffffff;
+  --color-range-in-range-text: #1e6634;
+  --color-range-in-range-subtle: #e1f2e6;
+
+  --color-range-high: #a87800;
+  --color-range-high-on: #1c1400;
+  --color-range-high-text: #765400;
+  --color-range-high-subtle: #fbf0d4;
+
+  --color-range-very-high: #b04a14;
+  --color-range-very-high-on: #ffffff;
+  --color-range-very-high-text: #973f10;
+  --color-range-very-high-subtle: #fcebdf;
+
+  /* ---- Typography ---- */
+  --font-sans:
+    'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-mono:
+    'Atkinson Hyperlegible Mono Variable', 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+
+  --font-size-xs: 0.8125rem; /* 13px: table meta, captions */
+  --font-size-sm: 0.875rem; /* 14px: dense UI, table cells */
+  --font-size-md: 1rem; /* 16px: body */
+  --font-size-lg: 1.125rem; /* 18px: lead, patient body */
+  --font-size-xl: 1.375rem; /* 22px: section heading */
+  --font-size-2xl: 1.75rem; /* 28px: page heading */
+  --font-size-3xl: 2.25rem; /* 36px: display measurement */
+  --font-size-4xl: 3rem; /* 48px: hero measurement */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.3;
+  --line-height-body: 1.5;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+
+  --measure-prose: 68ch;
+
+  /* ---- Spacing (4px base) ---- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* ---- Sizes ---- */
+  --control-height-sm: 2rem; /* 32px: dense staff toolbars */
+  --control-height-md: 2.5rem; /* 40px: staff default */
+  --control-height-lg: 3rem; /* 48px: patient touch target */
+  --row-height: 2.875rem; /* 46px: triage rows (44 to 48) */
+  --rail-width: 15rem;
+  --topbar-height: 3.5rem;
+  --content-max: 90rem;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --border-width: 1px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  /* ---- Shadows (offset + soft blur, tinted to petrol ink) ---- */
+  --shadow-sm: 0 1px 2px rgb(12 52 60 / 0.08);
+  --shadow-md: 0 2px 6px rgb(12 52 60 / 0.1), 0 1px 2px rgb(12 52 60 / 0.06);
+  --shadow-lg: 0 10px 28px rgb(12 52 60 / 0.16), 0 2px 6px rgb(12 52 60 / 0.08);
+
+  /* ---- Motion ---- */
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 280ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- Layers ---- */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-rail: 200;
+  --z-overlay: 300;
+  --z-toast: 400;
+
+  /*
+   * ---- Breakpoints (container queries) ----
+   * CSS cannot read custom properties inside @container conditions, so these values are
+   * reference tokens: every @container rule writes the same literal (see design-theme.md).
+   */
+  --bp-compact: 40rem; /* 640px */
+  --bp-medium: 64rem; /* 1024px */
+  --bp-wide: 90rem; /* 1440px */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0b1416;
+    --color-surface: #111d20;
+    --color-surface-sunken: #0a1113;
+    --color-surface-hover: #172629;
+    --color-border: #263a3e;
+    --color-border-strong: #6b8489;
+    --color-text: #e4eeef;
+    --color-text-muted: #a5b8bb;
+    --color-text-placeholder: #93a8ac;
+    --color-text-disabled: #6b7f83;
+
+    --color-shell: #071b1f;
+    --color-shell-raised: #0d2a30;
+    --color-shell-border: #17393f;
+    --color-shell-text: #e4f0f1;
+    --color-shell-text-muted: #9fbcc0;
+    --color-shell-active: #164a53;
+    --color-shell-focus: #8fdde6;
+
+    --color-primary: #4cc0cc;
+    --color-primary-hover: #6dd0da;
+    --color-primary-active: #8fdde6;
+    --color-primary-text: #04252a;
+    --color-primary-subtle: #12363b;
+    --color-primary-subtle-text: #a6e4ea;
+    --color-link: #6dd0da;
+
+    --color-focus: #6dd0da;
+    --color-selection: #1d5961;
+    --color-selection-text: #f0fafb;
+    --color-caret: #6dd0da;
+
+    --color-scrollbar-thumb: #6b8489;
+    --color-scrollbar-track: #0a1113;
+
+    --color-success: #6fd08e;
+    --color-success-subtle: #12301c;
+    --color-warning: #f0c35a;
+    --color-warning-subtle: #33280c;
+    --color-info: #6dd0da;
+    --color-info-subtle: #10303a;
+
+    --color-critical: #ff8a80;
+    --color-critical-hover: #ffaaa2;
+    --color-critical-text: #2b0503;
+    --color-critical-subtle: #3a1512;
+    --color-critical-subtle-text: #ffb4ab;
+
+    --color-simulated: #3a2e0c;
+    --color-simulated-text: #f6dc95;
+    --color-simulated-border: #8c6d1f;
+
+    --color-range-very-low: #e8475b;
+    --color-range-very-low-on: #2a0109;
+    --color-range-very-low-text: #ff9aa6;
+    --color-range-very-low-subtle: #3b1219;
+
+    --color-range-low: #f7aeb2;
+    --color-range-low-on: #2b0709;
+    --color-range-low-text: #f8b7ba;
+    --color-range-low-subtle: #391a1c;
+
+    --color-range-in-range: #5cc98a;
+    --color-range-in-range-on: #04200f;
+    --color-range-in-range-text: #86dcaa;
+    --color-range-in-range-subtle: #12301e;
+
+    --color-range-high: #e7c14f;
+    --color-range-high-on: #231a00;
+    --color-range-high-text: #f0d37f;
+    --color-range-high-subtle: #33290c;
+
+    --color-range-very-high: #f2945a;
+    --color-range-very-high-on: #2a1000;
+    --color-range-very-high-text: #f7b48a;
+    --color-range-very-high-subtle: #3a2012;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 2px 6px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 28px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

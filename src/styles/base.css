@@ -1,0 +1,177 @@
+/*
+ * Global base: reset, typography defaults and the browser surfaces we did not draw
+ * (selection, caret, focus ring, scrollbars, underlines, tabular numerals).
+ * Every value comes from tokens.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  accent-color: var(--color-primary);
+  caret-color: var(--color-caret);
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+}
+
+body {
+  margin: 0;
+  min-block-size: 100dvh;
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  font-size-adjust: from-font;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+  font-weight: var(--font-weight-bold);
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+img,
+svg {
+  display: block;
+  max-inline-size: 100%;
+}
+
+svg {
+  flex: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/* Tabular figures wherever numbers line up. */
+table,
+time,
+data,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--color-selection);
+  color: var(--color-selection-text);
+}
+
+::placeholder {
+  color: var(--color-text-placeholder);
+  opacity: 1;
+}
+
+/* One visible focus ring for every interactive element; drawn with outline so forced colors keep it. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Legacy scrollbar fallback only where scrollbar-color is unsupported. */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    inline-size: 12px;
+    block-size: 12px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+    border-radius: var(--radius-pill);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+  }
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.skip-link {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: var(--z-toast);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-link);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
