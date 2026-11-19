@@ -106,7 +106,7 @@ export function TriagePage() {
           {rowsQuery.isSuccess && visible.length > 0 ? (
             <TriageMap rows={visible} selectedId={selected?.patientId ?? null} onSelect={filters.selectPatient} />
           ) : (
-            queueBody
+            <p className="panel__lead">{es.doctor.triage.map.waiting}</p>
           )}
         </div>
       </section>

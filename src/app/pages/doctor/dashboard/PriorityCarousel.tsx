@@ -79,7 +79,11 @@ export function PriorityCarousel({
               </span>
             </div>
             {row.reasons[0] ? <p className="priority-card__reason">{row.reasons[0].text}</p> : null}
-            <Link to={`/doctor/patients/${row.patientId}`} className="priority-card__link">
+            <Link
+              to={`/doctor/patients/${row.patientId}`}
+              className="priority-card__link"
+              aria-label={format(es.doctor.dashboard.priority.openFor, { name: row.fullName })}
+            >
               {es.doctor.dashboard.priority.open}
               <ArrowRight size="1em" aria-hidden="true" />
             </Link>

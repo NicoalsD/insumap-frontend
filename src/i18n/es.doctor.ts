@@ -11,10 +11,10 @@ export const doctorStrings = {
     windowChip: '{days} días',
     statsLabel: 'Resumen de tu panel; cada indicador filtra la cola',
     stats: {
-      critical: 'Críticos',
+      critical: 'Pacientes críticos',
       openAlerts: 'Con alertas abiertas',
       aiPending: 'Con sugerencias de IA',
-      unreviewed: 'Sin revisar',
+      unreviewed: 'Pendientes de revisión',
     },
     bodyLabel: 'Modelo 3D del cuerpo humano con un sensor de glucosa en el brazo',
     risk: {
@@ -31,6 +31,7 @@ export const doctorStrings = {
       noReading: 'Sin lecturas',
       select: 'Ver a {name} en el mapa y la vista previa',
       open: 'Abrir expediente',
+      openFor: 'Abrir el expediente de {name}',
     },
     assistant: {
       title: 'Asistente clínico',
@@ -97,6 +98,7 @@ export const doctorStrings = {
       tooltipValue: '{value} mg/dL · TIR {tir} %',
       tooltipNoData: 'Datos insuficientes',
       noData: 'Sin datos suficientes',
+      waiting: 'El mapa aparece cuando la cola tiene pacientes para mostrar.',
       unavailable: 'Este equipo no puede mostrar el mapa 3D. La cola de abajo tiene la misma información.',
       legend: 'Color de la última glucosa',
       alertsHint: 'Las esferas más grandes tienen alertas abiertas.',
