@@ -5,6 +5,7 @@ import { bodyStrings } from '@/i18n/es.body';
 import { expectNoAxeViolations } from '@/test/axe';
 import type { InjectionSiteEntry } from './injectionModel';
 import { InjectionBodyMap } from './InjectionBodyMap';
+import { ZOOM_MAX, ZOOM_MIN } from './injectionZoom';
 import type { SiteCode, SpotNumber } from './siteCodes';
 
 /**
@@ -29,7 +30,7 @@ vi.mock('./bodyAsset', async (importOriginal) => {
 });
 
 const SPOT = { name: bodyStrings.spotGroup };
-const TURN = { name: bodyStrings.turn };
+const TOOLS = { name: bodyStrings.tools };
 vi.mock('./injectionScene', () => ({
   createInjectionScene: (options: { onPick: (site: string, spot: number) => void }) => {
     if (fake.returnNull) return null;
@@ -91,12 +92,12 @@ afterEach(() => {
 });
 
 describe('InjectionBodyMap without WebGL', () => {
-  it('shows only the native list, with the notice and no canvas', () => {
+  it('shows only the native list, with the notice and no canvas or tools', () => {
     const errors = vi.spyOn(console, 'error');
     const { container } = renderMap();
     expect(container.querySelector('canvas')).toBeNull();
     expect(screen.getByText(bodyStrings.unavailable)).toBeInTheDocument();
-    expect(screen.queryByRole('slider', TURN)).toBeNull();
+    expect(screen.queryByRole('group', TOOLS)).toBeNull();
     expect(errors).not.toHaveBeenCalled();
   });
 
@@ -116,10 +117,7 @@ describe('list and selection', () => {
   it('reflects the selected site and spot in the native radios', () => {
     const { rerender } = renderMap({ selectedSite: 'ABDOMEN_LEFT', selectedSpot: 2 });
     expect(screen.getByRole('radio', { name: /Abdomen izq\./ })).toBeChecked();
-    expect(screen.getByRole('slider', SPOT)).toHaveAttribute(
-      'aria-valuetext',
-      expect.stringMatching(/^Punto 2/),
-    );
+    expect(within(screen.getByRole('group', SPOT)).getByRole('radio', { name: /^Punto 2/ })).toBeChecked();
     expect(screen.getByRole('radio', { name: /Abdomen der\./ })).not.toBeChecked();
 
     rerender(
@@ -133,10 +131,7 @@ describe('list and selection', () => {
     );
     expect(screen.getByRole('radio', { name: /Muslo der\./ })).toBeChecked();
     expect(screen.getByRole('radio', { name: /Abdomen izq\./ })).not.toBeChecked();
-    expect(screen.getByRole('slider', SPOT)).toHaveAttribute(
-      'aria-valuetext',
-      expect.stringMatching(/^Punto 4/),
-    );
+    expect(within(screen.getByRole('group', SPOT)).getByRole('radio', { name: /^Punto 4/ })).toBeChecked();
   });
 
   it('chooses a site with the default spot after the last one used', async () => {
@@ -146,17 +141,21 @@ describe('list and selection', () => {
     expect(onSelect).toHaveBeenCalledWith('THIGH_RIGHT', 3);
   });
 
-  it('chooses a spot of the selected site', async () => {
+  it('chooses a spot of the selected site and names the next one in the rotation', async () => {
     const user = userEvent.setup();
     const { onSelect } = renderMap({ selectedSite: 'ABDOMEN_RIGHT', selectedSpot: 1 });
-    screen.getByRole('slider', SPOT).focus();
-    await user.keyboard('{End}');
+    const spots = screen.getByRole('group', SPOT);
+    expect(within(spots).getByRole('radio', { name: bodyStrings.spotSuggested.replace('{spot}', '1') })).toBeChecked();
+    await user.click(within(spots).getByRole('radio', { name: /^Punto 4/ }));
     expect(onSelect).toHaveBeenCalledWith('ABDOMEN_RIGHT', 4);
   });
 
   it('keeps the spot choice disabled until a site is selected', () => {
     renderMap();
-    expect(screen.getByRole('slider', SPOT)).toHaveAttribute('aria-disabled', 'true');
+    const spots = within(screen.getByRole('group', SPOT)).getAllByRole('radio');
+    expect(spots).toHaveLength(4);
+    for (const spot of spots) expect(spot).toBeDisabled();
+    expect(screen.getByText(bodyStrings.spotNeedsSite)).toBeInTheDocument();
   });
 
   it('does not let the user choose an AVOID site', async () => {
@@ -192,92 +191,89 @@ describe('states with text', () => {
   });
 });
 
-describe('WebGL path with a fake scene', () => {
-  it('renders the canvas, the turn slider and the labels, and passes axe', async () => {
-    fake.supported = true;
-    const { container } = renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+/** Renders the WebGL path and waits for the fake scene. */
+async function renderStage(props: HarnessProps = {}) {
+  fake.supported = true;
+  const result = renderMap(props);
+  await waitFor(() => {
+    expect(fake.scenes).toHaveLength(1);
+  });
+  return result;
+}
+
+describe('WebGL path with a fake scene: the body is the control', () => {
+  it('renders the canvas, the round tools and the labels, with no sliders, and passes axe', async () => {
+    const { container } = await renderStage();
     const canvas = container.querySelector('canvas');
     expect(canvas).not.toBeNull();
     expect(canvas).toHaveAttribute('role', 'img');
-    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
-      'aria-valuetext',
-      bodyStrings.turnNamed.front,
-    );
+    expect(screen.queryAllByRole('slider')).toHaveLength(0);
+    const tools = screen.getByRole('group', TOOLS);
+    expect(within(tools).getByRole('button', { name: bodyStrings.flipToBack })).toBeInTheDocument();
+    expect(within(tools).getByRole('button', { name: bodyStrings.zoomIn })).toBeInTheDocument();
     expect(container.querySelector('.ibm__labels')).toHaveAttribute('aria-hidden', 'true');
     await expectNoAxeViolations(container);
   });
 
-  it('switches the view and tells the parent, and the scene follows', async () => {
-    fake.supported = true;
+  it('keeps the keyboard list inside the stage, visually hidden until it takes focus', async () => {
+    const { container } = await renderStage();
+    const keys = container.querySelector('.ibm__stage .ibm__keys');
+    expect(keys).toHaveClass('visually-hidden');
+    expect(within(keys as HTMLElement).getByRole('group', { name: LABEL })).toBeInTheDocument();
+  });
+
+  it('turns to the back with the tool, tells the parent, and the scene follows', async () => {
     const user = userEvent.setup();
     const onViewChange = vi.fn();
-    renderMap({ onViewChange });
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
-    screen.getByRole('slider', TURN).focus();
-    await user.keyboard('{End}');
+    await renderStage({ onViewChange });
+    await user.click(screen.getByRole('button', { name: bodyStrings.flipToBack }));
     expect(onViewChange).toHaveBeenCalledWith('back');
-    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
-      'aria-valuetext',
-      bodyStrings.turnNamed.back,
-    );
-    const scene = fake.scenes[0];
-    expect(scene?.apply).toHaveBeenLastCalledWith(
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(
       expect.objectContaining({ view: 'back', azimuth: Math.PI }),
     );
+    await user.click(screen.getByRole('button', { name: bodyStrings.flipToFront }));
+    expect(onViewChange).toHaveBeenLastCalledWith('front');
+  });
+
+  it('brings the sites close with the zoom tool or a double click on the body', async () => {
+    const user = userEvent.setup();
+    const { container } = await renderStage();
+    await user.click(screen.getByRole('button', { name: bodyStrings.zoomIn }));
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM_MAX }));
+    expect(screen.getByRole('button', { name: bodyStrings.zoomOut })).toBeInTheDocument();
+    await user.dblClick(container.querySelector('canvas') as HTMLCanvasElement);
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM_MIN }));
   });
 
   it('turns to the back when a back site is chosen in the list', async () => {
-    fake.supported = true;
     const user = userEvent.setup();
     const onViewChange = vi.fn();
-    const { onSelect } = renderMap({ onViewChange });
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    const { onSelect } = await renderStage({ onViewChange });
     await user.click(screen.getByRole('radio', { name: /Brazo der\./ }));
     expect(onViewChange).toHaveBeenCalledWith('back');
     expect(onSelect).toHaveBeenCalledWith('ARM_RIGHT', 1);
   });
 
   it('forwards a tap on a marker as a selection', async () => {
-    fake.supported = true;
-    const { onSelect } = renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    const { onSelect } = await renderStage();
     fake.scenes[0]?.options.onPick('ABDOMEN_RIGHT', 4);
     expect(onSelect).toHaveBeenCalledWith('ABDOMEN_RIGHT', 4);
   });
 
-  it('pauses the continuous motion from the visible button', async () => {
-    fake.supported = true;
+  it('pauses the continuous motion from its round tool', async () => {
     const user = userEvent.setup();
-    renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    await renderStage();
     await user.click(screen.getByRole('button', { name: bodyStrings.pause }));
-    const scene = fake.scenes[0];
-    expect(scene?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }));
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }));
     expect(screen.getByRole('button', { name: bodyStrings.play })).toBeInTheDocument();
   });
 
-  it('has no pause button and a still scene with reduced motion', async () => {
-    fake.supported = true;
+  it('has no pause tool and a still scene with reduced motion', async () => {
     window.matchMedia = (query: string) =>
       ({ matches: query.includes('reduce'), media: query }) as MediaQueryList;
-    renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    await renderStage();
     expect(screen.queryByRole('button', { name: bodyStrings.pause })).toBeNull();
-    const scene = fake.scenes[0];
-    expect(scene?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }));
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ playing: false }));
   });
 
   it('falls back to the list when the scene cannot start', async () => {
@@ -291,11 +287,7 @@ describe('WebGL path with a fake scene', () => {
   });
 
   it('disposes the scene on unmount', async () => {
-    fake.supported = true;
-    const { unmount } = renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    const { unmount } = await renderStage();
     const scene = fake.scenes[0];
     unmount();
     expect(scene?.dispose).toHaveBeenCalledTimes(1);
@@ -303,10 +295,10 @@ describe('WebGL path with a fake scene', () => {
 });
 
 describe('read-only map', () => {
-  it('shows the chosen spot as text and offers no spot slider', () => {
+  it('shows the chosen spot as text and offers no spot choice', () => {
     renderMap({ selectedSite: 'ABDOMEN_LEFT', selectedSpot: 2, readOnly: true });
     expect(screen.getByText('Punto elegido: 2.')).toBeInTheDocument();
-    expect(screen.queryByRole('slider', SPOT)).toBeNull();
+    expect(screen.queryByRole('group', SPOT)).toBeNull();
   });
 
   it('keeps the states visible but disables every site choice', async () => {
@@ -324,11 +316,7 @@ describe('read-only map', () => {
   });
 
   it('never selects from a marker tap', async () => {
-    fake.supported = true;
-    const { onSelect } = renderMap({ readOnly: true });
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
+    const { onSelect } = await renderStage({ readOnly: true });
     expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(
       expect.objectContaining({ readOnly: true }),
     );
@@ -336,45 +324,32 @@ describe('read-only map', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('still switches between front and back', async () => {
-    fake.supported = true;
+  it('still turns between front and back', async () => {
     const user = userEvent.setup();
-    renderMap({ readOnly: true });
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
-    screen.getByRole('slider', TURN).focus();
-    await user.keyboard('{End}');
-    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
-      'aria-valuetext',
-      bodyStrings.turnNamed.back,
-    );
+    await renderStage({ readOnly: true });
+    await user.click(screen.getByRole('button', { name: bodyStrings.flipToBack }));
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ view: 'back' }));
+    expect(screen.getByText(bodyStrings.hintRead)).toBeInTheDocument();
   });
 });
 
 describe('suggested site on the other side', () => {
-  it('offers a button to the front when the back is showing', async () => {
-    fake.supported = true;
+  it('floats a note over the stage that turns the body to the front', async () => {
     const user = userEvent.setup();
-    renderMap({ defaultView: 'back' });
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
-    expect(screen.getByRole('note')).toHaveTextContent(bodyStrings.suggestedOnFront);
-    await user.click(screen.getByRole('button', { name: bodyStrings.showFront }));
-    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
-      'aria-valuetext',
-      bodyStrings.turnNamed.front,
+    const { container } = await renderStage({ defaultView: 'back' });
+    const note = screen.getByRole('button', { name: new RegExp(bodyStrings.suggestedOnFront) });
+    // Inside the stage and out of the flow: it can come and go without moving the body.
+    expect(note.closest('.ibm__stage')).toBe(container.querySelector('.ibm__stage'));
+    await user.click(note);
+    expect(fake.scenes[0]?.apply).toHaveBeenLastCalledWith(
+      expect.objectContaining({ view: 'front', azimuth: 0 }),
     );
-    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByRole('button', { name: new RegExp(bodyStrings.suggestedOnFront) })).toBeNull();
   });
 
-  it('shows no note on the front', async () => {
-    fake.supported = true;
-    renderMap();
-    await waitFor(() => {
-      expect(fake.scenes).toHaveLength(1);
-    });
-    expect(screen.queryByRole('note')).toBeNull();
+  it('shows no note while the suggested side is showing', async () => {
+    await renderStage();
+    expect(screen.queryByRole('button', { name: new RegExp(bodyStrings.suggestedOnFront) })).toBeNull();
+    expect(screen.queryByRole('button', { name: new RegExp(bodyStrings.suggestedOnBack) })).toBeNull();
   });
 });
