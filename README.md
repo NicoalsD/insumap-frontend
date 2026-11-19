@@ -2,7 +2,7 @@
 
 Cliente web de Insumap, diseñado primero para escritorio (1280 a 1920 px, base de 1440 px) y adaptado hacia abajo: PWA del paciente (instalable, usable desde 360 px), dashboard del médico con triage y consola del administrador de la clínica.
 
-Consume la API de `insumap-backend`. Toda vista con datos de la clínica demo muestra "Datos simulados".
+Consume la API de `insumap-backend`.
 
 ## Estado
 
@@ -46,4 +46,14 @@ npx playwright test                             # pruebas extremo a extremo y ac
 - Drako Salazar ([`Drako2305`](https://github.com/Drako2305))
 - Nicolas Mora ([`nicomora70`](https://github.com/nicomora70))
 
-> Proyecto académico. No es un dispositivo médico ni reemplaza el criterio del médico tratante. Los datos de pacientes son simulados.
+> Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide.
+
+## Cuentas de desarrollo (solo con `VITE_USE_MOCKS=true`)
+
+Con Mock Service Worker, el login acepta estas cuentas ficticias (dominio reservado `example.test`). El código MFA de las cuentas de personal es `123456`.
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Médico | `mauricio.henao@example.test` | `clave-ficticia-medico` |
+| Admin de clínica | `marta.pineda@example.test` | `clave-ficticia-admin` |
+| Paciente | `luisa.ortiz@example.test` | `clave-ficticia-paciente` |

@@ -1,12 +1,14 @@
 import './styles/layers.css';
 import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
 import '@fontsource-variable/atkinson-hyperlegible-mono/wght.css';
+import '@fontsource-variable/bricolage-grotesque/wght.css';
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/layout.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
-import { mocksEnabled } from './services/demo/DemoLogin';
+import { mocksEnabled } from './services/http/mocksEnabled';
 
 /** Starts Mock Service Worker first when `VITE_USE_MOCKS=true`; the module is not bundled otherwise. */
 async function bootstrap(): Promise<void> {

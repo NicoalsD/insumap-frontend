@@ -15,7 +15,7 @@ Los textos de la UI **nunca** se escriben dentro de los componentes: viven en `s
 
 Insumap es una plataforma B2B2C de monitoreo de pacientes con diabetes para hospitales y clínicas. La clínica importa sus pacientes desde su propia base de datos y les emite credenciales; el paciente registra sus datos; uno o varios médicos asignados lo vigilan con dashboard, alertas y recomendaciones de IA que el médico aprueba. Visión completa: [Insumap.md](https://github.com/NicoalsD/insumap-backend/blob/develop/docs/Insumap.md).
 
-> **Aviso:** Insumap es un proyecto académico. **No es un dispositivo médico**, no reemplaza el criterio clínico y la IA solo apoya al médico, que toma todas las decisiones. Todos los pacientes son simulados.
+> **Aviso:** Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide.
 
 Este repositorio es la aplicación web en **React 19 + Vite + TypeScript**:
 - **PWA del paciente** (instalable, usable desde 360 px): registros de glucosa, insulina, comidas, actividad y síntomas (también sin conexión, por lotes), gráficas, plan activo, recordatorios, mensajes con su médico, asistente educativo, consentimiento y privacidad.
@@ -90,10 +90,10 @@ Cada patrón se implementa **de forma explícita**, con su clase o interfaz prop
 export class DashboardFiltersMediator {}
 ```
 
-### 3.5 Datos simulados
-- La clínica demo (`is_demo`) muestra siempre el aviso **"Datos simulados"**, en todas las pantallas y reportes.
-- El aviso médico (proyecto académico, no es un dispositivo médico, la IA solo apoya al médico) está siempre visible: en el login, en el pie y junto a cada contenido de IA.
-- Las fixtures y los handlers de MSW usan datos ficticios y correos del dominio reservado `example.test`.
+### 3.5 Presentación de producto
+- La aplicación se presenta como producto en producción (decisión del usuario, 2026-11-19): ninguna pantalla muestra "demo", "datos simulados" ni "proyecto académico", y no hay selector de rol; se entra por el login real.
+- El aviso regulatorio ("Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide.") está siempre visible en el pie y junto a cada contenido de IA.
+- Las fixtures y los handlers de MSW usan datos ficticios y correos del dominio reservado `example.test`; las cuentas de desarrollo se documentan en el README, nunca en la interfaz.
 
 ### 3.6 Diagramas
 Se hacen con draw.io (MCP de draw.io y sus iconos). El fuente `.drawio` y su `.png` exportado, con el mismo nombre, van en `docs/images/`. Si cambias algo que aparece en un diagrama, actualiza el `.drawio` y vuelve a exportar el `.png`. Los textos de los diagramas van en español.
@@ -132,7 +132,7 @@ Capas propuestas, como en CAUDAL (se fijan en `.agents/architecture.md`): `src/a
 2. Ubica la historia de usuario y los endpoints en la [API](https://github.com/NicoalsD/insumap-backend/blob/develop/docs/API.md).
 3. Textos en `src/i18n/es.ts`; límites, metas y catálogos desde la API.
 4. Lógica sin React en `src/core` con pruebas; componente en `src/features/*`.
-5. Estados vacío, cargando, error y sin conexión (PWA); aviso médico y "Datos simulados" visibles.
+5. Estados vacío, cargando, error y sin conexión (PWA); aviso regulatorio visible.
 6. Pruebas de componente por rol accesible con MSW y axe; Playwright si es un flujo principal.
 7. Commits pequeños y PR hacia `develop` con los patrones listados.
 
@@ -142,7 +142,7 @@ Capas propuestas, como en CAUDAL (se fijan en `.agents/architecture.md`): `src/a
 - [ ] Playwright en verde y axe sin violaciones.
 - [ ] Sin textos ni números quemados; sin secretos.
 - [ ] WCAG 2.2 AA; diseñado primero para escritorio y, en la PWA del paciente, usable desde 360 px.
-- [ ] Aviso médico y "Datos simulados" visibles donde corresponde.
+- [ ] Aviso regulatorio visible donde corresponde.
 - [ ] Documentación y diagramas actualizados.
 - [ ] Commits con la cuenta del integrante responsable y sin atribución a IA.
 
