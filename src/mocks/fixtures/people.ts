@@ -51,7 +51,7 @@ export const DOCTOR_ACCOUNT: FixtureAccount = {
 };
 
 export const PATIENT_ACCOUNT: FixtureAccount = {
-  id: 'a1000000-0000-4000-8000-000000000003',
+  id: 'a1000003-0000-4000-8000-000000000003',
   email: 'luisa.ortiz@example.test',
   password: 'demo-password-patient',
   fullName: 'Luisa Fernanda Ortiz',
@@ -84,7 +84,20 @@ export const ADMIN_ACCOUNT: FixtureAccount = {
   ],
 };
 
-export const ACCOUNTS = [DOCTOR_ACCOUNT, PATIENT_ACCOUNT, ADMIN_ACCOUNT] as const;
+/** Staff account without MFA yet: its first login goes through `MFA_ENROLLMENT_REQUIRED`. */
+export const ENROLLMENT_ACCOUNT: FixtureAccount = {
+  ...DOCTOR_ACCOUNT,
+  id: 'd1000000-0000-4000-8000-000000000002',
+  email: 'ricardo.sanchez@example.test',
+  password: 'demo-password-enrollment',
+  fullName: 'Ricardo Sánchez Mora',
+  mfaEnabled: false,
+};
+
+export const ACCOUNTS = [DOCTOR_ACCOUNT, PATIENT_ACCOUNT, ADMIN_ACCOUNT, ENROLLMENT_ACCOUNT] as const;
+
+/** Activation code and birth date the mock accepts on `POST /auth/activation/verify` (fixture only). */
+export const DEMO_ACTIVATION = { code: 'K7M2-9PQX-4TRD-8WHN', birthDate: '1992-03-18' } as const;
 
 /**
  * `GET /meta/field-limits` payload. Keys beyond the ones API.md lists (`reason_*`, `note_*`,

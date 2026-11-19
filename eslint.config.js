@@ -82,8 +82,9 @@ export default defineConfig(
     },
   },
   {
-    // Fixtures are data, not logic: they stand in for what the API returns.
-    files: ['src/mocks/fixtures/**'],
+    // Fixtures and handlers stand in for the API: their numbers (page sizes, ids, ports of a
+    // fake server) are mock data, not application logic.
+    files: ['src/mocks/**'],
     rules: { '@typescript-eslint/no-magic-numbers': 'off' },
   },
   {
