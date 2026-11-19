@@ -6,7 +6,7 @@ const COOKIE_NAME = 'insumap_mock_rt';
 /**
  * Mutable state behind the mock API: the fixture world, issued tokens and the simulated refresh
  * cookie. The cookie holds only a fictitious account id; it stands in for the HttpOnly refresh
- * cookie of the real API so a reload keeps the demo session.
+ * cookie of the real API so a reload keeps the fixture session.
  */
 export class MockState {
   world: FixtureWorld = createWorld();

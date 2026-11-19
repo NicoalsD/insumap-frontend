@@ -8,8 +8,11 @@ export type SessionState =
 
 export interface SessionContextValue {
   readonly state: SessionState;
-  /** Reloads `GET /auth/current-user` after a login or MFA step. */
-  reload: () => Promise<void>;
+  /**
+   * Reloads `GET /auth/current-user` after a login or MFA step. Resolves with the new session,
+   * or `null` when there is none, so the caller can pick the home screen by role.
+   */
+  reload: () => Promise<SessionViewModel | null>;
   /** Ends the session on the server and forgets the token. */
   signOut: () => Promise<void>;
 }

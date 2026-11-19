@@ -37,7 +37,8 @@ Plataforma B2B2C de monitoreo de pacientes con diabetes: la clínica trae a sus 
 ## Brand Commitments
 
 - Nombre: Insumap.
-- Aviso médico siempre visible (login, pie y junto a todo contenido de IA): proyecto académico, no es un dispositivo médico, la IA solo apoya al médico.
+- Aviso regulatorio siempre visible (login, pie de cada vista y junto a todo contenido de IA): "Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide."
+- Decisión del usuario del 2026-11-19 (aplica a toda la app, no solo a la landing): la aplicación se presenta como producto en producción. Sin franja "Datos simulados", sin selector de rol, sin "demo" ni "proyecto académico" en ninguna pantalla. Las cuentas de las fixtures solo se documentan en el README para desarrollo. Reemplaza AGENTS.md 3.5 y el principio 5.
 - Excepción en la landing pública (`/`), por decisión del usuario del 2026-11-19:
   - Se presenta como producto en producción, sin "demo", "datos simulados" ni "proyecto académico".
   - Lleva un aviso regulatorio en el pie y junto a la tarjeta de IA: "Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide."
@@ -58,7 +59,7 @@ Confirmado por el usuario: nada con aspecto de plantilla SaaS (tarjetas iguales,
 2. Lo urgente primero: el triage ordena por riesgo, no por orden alfabético.
 3. Ningún rango se comunica solo con color; la unidad siempre se ve.
 4. Ningún valor clínico vive en el cliente: viene de la clínica.
-5. Datos simulados declarados, nunca disfrazados de reales.
+5. Cada valor clínico muestra su origen (sensor, glucómetro o manual) y su hora.
 
 ## Accessibility & Inclusion
 

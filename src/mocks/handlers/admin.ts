@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import type { CredentialInvitationDto, ImportBatchDto } from '@/services/dto/admin';
+import { ROLES } from '@/services/dto/common';
 import { apiUrl } from '@/services/http/apiUrl';
 import { HTTP_STATUS } from '@/services/http/httpStatus';
 import { parseCsvImport, parseFhirImport, type ImportCandidate, type ParsedImport } from '../importValidation';
@@ -58,7 +59,7 @@ export function adminHandlers(state: MockState) {
         created_by: result.account.fullName,
         created_at: new Date().toISOString(),
         totals: totalsOf(parsed),
-        simulated: true,
+        simulated: false,
       };
       state.world.imports.set(batch.batch_id, { batch, rows: [...parsed.rows] });
       candidatesByBatch.set(batch.batch_id, parsed.candidates);
@@ -122,7 +123,7 @@ export function adminHandlers(state: MockState) {
           primary_doctor_id: null,
           assigned_doctor_count: 0,
           invitation_status: null,
-          simulated: true,
+          simulated: false,
         });
       }
       return HttpResponse.json(entry.batch, { status: HTTP_STATUS.ACCEPTED });
@@ -172,6 +173,21 @@ export function adminHandlers(state: MockState) {
         status: HTTP_STATUS.CREATED,
         headers: { 'Cache-Control': 'no-store' },
       });
+    }),
+
+    http.get(apiUrl('/users'), ({ request }) => {
+      const result = guard(state, request, 'users.read');
+      if ('response' in result) return result.response;
+      const url = new URL(request.url);
+      const role = url.searchParams.get('role');
+      if (role !== null && !(ROLES as readonly string[]).includes(role)) {
+        return validationError([{ field: 'query.role', type: 'enum' }]);
+      }
+      // Patients are not clinic staff: the list answers doctors and admins only.
+      const items = state.world
+        .staffUsers()
+        .filter((user) => (role === null ? user.role !== 'PATIENT' : user.role === role));
+      return HttpResponse.json(page(items, url));
     }),
 
     http.get(apiUrl('/care-team/assignments'), ({ request }) => {

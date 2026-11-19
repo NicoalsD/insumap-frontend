@@ -14,7 +14,6 @@ import {
   LoadingState,
   MedicalDisclaimer,
   Select,
-  SimulatedNotice,
   Tabs,
   TextField,
   ToastProvider,
@@ -183,9 +182,8 @@ describe('states, notices and error boundary', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('shows the simulated-data notice and the medical disclaimer', async () => {
-    const { container } = render(<><SimulatedNotice /><MedicalDisclaimer /></>);
-    expect(screen.getByText(es.notices.simulated)).toBeVisible();
+  it('shows the medical disclaimer', async () => {
+    const { container } = render(<MedicalDisclaimer />);
     expect(screen.getByText(es.notices.medicalDisclaimer)).toBeVisible();
     await expectNoAxeViolations(container);
   });

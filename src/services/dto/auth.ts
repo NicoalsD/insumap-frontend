@@ -29,7 +29,12 @@ export const currentUserSchema = z.object({
   user: z.object({ id: uuid, email: z.string(), full_name: z.string() }),
   role: roleSchema,
   clinic: z
-    .object({ id: uuid, name: z.string(), is_demo: z.boolean(), simulated: z.boolean() })
+    .object({
+      id: uuid,
+      name: z.string(),
+      is_demo: z.boolean().default(false),
+      simulated: z.boolean().default(false),
+    })
     .nullable(),
   permissions: z.array(z.string()),
   mfa_enabled: z.boolean(),

@@ -127,7 +127,7 @@ npx playwright test        # E2E y accesibilidad con axe
 ## 6. Datos y secretos
 
 - Ningún secreto, contraseña, token ni clave privada entra al repositorio. Las variables de entorno van en `.env.example` con marcadores `cambia-esto-...`.
-- Los datos de pacientes son simulados y se muestran como "Datos simulados". Nunca se usan datos personales ni clínicos reales.
+- Las fixtures usan datos ficticios. Nunca se usan datos personales ni clínicos reales.
 - Ningún dato personal ni clínico aparece en los logs.
 - Si un secreto llega al repositorio, se revoca de inmediato y se rota, aunque se borre el commit.
 

@@ -4,7 +4,21 @@
  *
  * Add a key here before rendering any text. Components never contain literal UI strings.
  */
+import { accessStrings } from './es.access';
+import { adminStrings } from './es.admin';
+import { adminImportsStrings } from './es.adminImports';
+import { detailStrings } from './es.detail';
+import { doctorStrings } from './es.doctor';
+import { patientStrings } from './es.patient';
+
 export const es = {
+  access: accessStrings,
+  doctor: doctorStrings,
+  patient: patientStrings,
+  admin: adminStrings,
+  adminImports: adminImportsStrings,
+  detail: detailStrings,
+
   app: {
     name: 'Insumap',
     tagline: 'Monitoreo de pacientes con diabetes para clínicas',
@@ -13,10 +27,7 @@ export const es = {
   },
 
   notices: {
-    simulated: 'Datos simulados',
-    simulatedDetail: 'Clínica demo: todos los pacientes y sus datos son ficticios.',
-    medicalDisclaimer:
-      'Insumap es un proyecto académico. No es un dispositivo médico ni reemplaza el criterio clínico. La IA solo apoya al médico, que toma todas las decisiones.',
+    medicalDisclaimer: 'Insumap no es un dispositivo médico y no reemplaza el criterio clínico. La IA solo propone; el médico decide.',
     aiSuggestion: 'Sugerencia de la IA, pendiente de la decisión del médico',
     aiFallback: 'Respaldo por reglas',
   },
@@ -39,6 +50,8 @@ export const es = {
     home: 'Inicio',
     readings: 'Mis lecturas',
     plan: 'Mi plan',
+    messages: 'Mensajes',
+    staff: 'Personal',
     designSystem: 'Sistema de diseño',
     account: 'Cuenta',
     logout: 'Cerrar sesión',
@@ -334,12 +347,8 @@ export const es = {
     },
   },
   auth: {
-    demoEnter: 'Entrar a la demo',
-    demoRoleLabel: 'Entrar como',
     sessionExpired: 'Tu sesión terminó. Inicia sesión de nuevo.',
     loginTitle: 'Iniciar sesión',
-    demoUnavailable: 'La entrada a la demo no está disponible en esta versión.',
-    loginPending: 'La pantalla de inicio de sesión se construye en la siguiente fase.',
   },
 
   system: {

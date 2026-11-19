@@ -1,10 +1,13 @@
 import {
   Activity,
   Bell,
+  CalendarClock,
   ClipboardList,
   FileUp,
   House,
   KeyRound,
+  MessageSquare,
+  UserCog,
   Network,
   Users,
   type LucideIcon,
@@ -44,9 +47,12 @@ export const NAV_ITEMS: Record<ShellRole, readonly NavItem[]> = {
     { path: '/admin/imports', label: es.nav.imports, icon: FileUp, permission: PERMISSIONS.patientsImport },
     { path: '/admin/credentials', label: es.nav.credentials, icon: KeyRound, permission: PERMISSIONS.credentialsIssue },
     { path: '/admin/care-teams', label: es.nav.careTeams, icon: Network, permission: PERMISSIONS.careTeamRead },
+    { path: '/admin/staff', label: es.nav.staff, icon: UserCog },
   ],
   PATIENT: [
     { path: '/patient', label: es.nav.home, icon: House },
     { path: '/patient/readings', label: es.nav.readings, icon: ClipboardList, permission: PERMISSIONS.glucoseReadOwn },
+    { path: '/patient/plan', label: es.nav.plan, icon: CalendarClock },
+    { path: '/patient/messages', label: es.nav.messages, icon: MessageSquare },
   ],
 };

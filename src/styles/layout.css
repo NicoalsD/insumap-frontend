@@ -1,0 +1,99 @@
+/*
+ * Page grid of the app, shared by every role. Same system as the landing: 12 columns, 1.5rem
+ * gutters, one left edge. It follows how people scan:
+ * - Doctor (dense, data first): F-shaped. The highest-risk content sits top-left and spans the
+ *   widest columns; the right rail (alerts, AI) holds the secondary column.
+ * - Patient (simple): layer-cake. One column of stacked bands, each opened by a heading, so a
+ *   glance at the headings tells what is below.
+ * Columns step down: 12 from 1280 px, 8 from 768 px, 4 below.
+ */
+.page {
+  inline-size: 100%;
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-6) var(--space-12);
+  container-type: inline-size;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-block-end: var(--space-6);
+}
+
+.page-header h1 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+}
+
+.page-header p {
+  color: var(--color-text-muted);
+  max-inline-size: var(--measure-prose);
+}
+
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  gap: var(--grid-gutter);
+  align-items: start;
+}
+
+.grid-12 > * {
+  grid-column: span var(--span, 12);
+  min-inline-size: 0;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.panel__header h2 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+}
+
+.panel__body {
+  padding: var(--space-5);
+}
+
+.measure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@container (max-width: 64rem) {
+  .grid-12 {
+    --grid-columns: 8;
+  }
+  .grid-12 > * {
+    grid-column: span min(var(--span-md, var(--span, 8)), 8);
+  }
+}
+
+@container (max-width: 40rem) {
+  .page {
+    padding-inline: var(--space-4);
+  }
+  .grid-12 {
+    --grid-columns: 4;
+    gap: var(--space-4);
+  }
+  .grid-12 > * {
+    grid-column: span 4;
+  }
+}

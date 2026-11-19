@@ -49,3 +49,13 @@ El rango objetivo del paciente se dibuja como una banda horizontal que recorre e
 
 ## Rechazos (del usuario)
 Nada de aspecto de plantilla SaaS (tarjetas iguales, gradientes, hero genérico), frases poéticas ni información de poco valor. Tampoco modales sin necesidad, texto con gradiente, glass decorativo, bordes laterales de color en tarjetas ni emoji como iconos. Los iconos salen de una sola librería (Lucide).
+
+
+## Actualización 2026-11-19: la app adopta el mundo de la landing
+Decisión del usuario: médico, paciente, admin y acceso usan el mismo mundo de la landing en registro Operate (sobrio, denso, escaneable).
+- Color: lienzo lila muy claro `#f3f5ff`, superficies blancas, tinta índigo `#15173a`, acción cobalto `#1f4bff`; riel de navegación en noche `#11132e`. Los rangos de glucosa conservan sus colores de consenso TIR y siempre llevan texto y textura.
+- Tipografía: Bricolage Grotesque en títulos, Atkinson Hyperlegible Next en la UI, Atkinson Mono solo en mediciones.
+- Retícula: la misma de 12 columnas de la landing (8 en tablet, 4 en móvil), clase `.grid-12` y `.panel` en `src/styles/layout.css`.
+- Lectura: el médico escanea en F (lo más urgente arriba a la izquierda, columna ancha de 8 a 9 columnas y riel derecho de 3 a 4 para alertas e IA); el paciente lee en pastel de capas (una sola columna de bandas con título); el admin en tablas con filtros a la izquierda.
+- 3D (solo detalle del paciente del médico): superficie de glucosa día × hora × mg/dL con el plano de la meta del perfil, junto a la AGP 2D y una tabla equivalente; cuerpo con sensor. Carga diferida, estático con `prefers-reduced-motion`.
+- Se eliminó el mundo petróleo. Sin "demo" ni "datos simulados" en ninguna pantalla.

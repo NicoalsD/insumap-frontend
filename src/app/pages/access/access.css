@@ -1,0 +1,218 @@
+/*
+ * Access screens (login, MFA, activation): one panel centered on the lavender canvas. Colors and
+ * spacing come from tokens only. The QR code is the one exception: it stays dark on light in both
+ * themes, because scanners need that contrast.
+ */
+.access {
+  display: grid;
+  place-items: center;
+  min-block-size: 100dvh;
+  padding: var(--space-6) var(--space-4) var(--space-12);
+  background: var(--color-canvas);
+}
+
+.access__card {
+  inline-size: 100%;
+  max-inline-size: 28rem;
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.access__brand {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-heavy);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-primary);
+}
+
+.access__header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.access__header h1 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  line-height: 1.15;
+}
+
+.access__description {
+  color: var(--color-text-muted);
+}
+
+.access__form,
+.access__section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.access__password {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.access__password .ui-field {
+  inline-size: 100%;
+}
+
+.access__toggle,
+.access__link {
+  min-block-size: 3rem;
+  padding-inline: var(--space-2);
+  background: none;
+  border: 0;
+  color: var(--color-link);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.access__toggle[aria-pressed='true'] {
+  color: var(--color-text);
+}
+
+.access__alert,
+.access__notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.access__alert {
+  background: var(--color-critical-subtle);
+  color: var(--color-critical-subtle-text);
+}
+
+.access__notice {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.access__submit {
+  inline-size: 100%;
+  min-block-size: 3rem;
+}
+
+.access__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.access__qr {
+  inline-size: min(100%, 16rem);
+  block-size: auto;
+  justify-self: center;
+  border-radius: var(--radius-md);
+}
+
+/* Dark modules on a white field in both themes: scanners need this contrast. */
+.access__qr rect {
+  fill: #ffffff;
+}
+
+.access__qr path {
+  fill: #0b0d1f;
+}
+
+.access__secret {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.access__secret code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.access__codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-8);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.access__check {
+  display: flex;
+  gap: var(--space-3);
+  align-items: start;
+  min-block-size: 3rem;
+  cursor: pointer;
+}
+
+.access__check input {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-block-start: var(--space-1);
+  accent-color: var(--color-primary);
+}
+
+.access__live {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.access__rules {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.access__rules li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.access__rules li[data-met='true'] {
+  color: var(--color-success);
+}
+
+@media (max-width: 40rem) {
+  .access__card {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .access__codes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .access * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.access__subtitle {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}

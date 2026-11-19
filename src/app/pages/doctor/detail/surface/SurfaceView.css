@@ -1,0 +1,45 @@
+/* The canvas fills the main column and is at least 26rem tall; the labels are drawn over it. */
+.surface-view {
+  position: relative;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.surface-view__canvas {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 26rem;
+  block-size: 28rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  touch-action: none;
+}
+
+.surface-view__canvas:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.surface-view__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.surface-view__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.surface-view__label[data-kind='axis'],
+.surface-view__label[data-kind='target'] {
+  font-weight: var(--font-weight-semibold);
+}

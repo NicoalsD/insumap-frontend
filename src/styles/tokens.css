@@ -10,53 +10,53 @@
 :root {
   color-scheme: light dark;
 
-  /* ---- Neutrals: near-white tinted toward petrol ---- */
-  --color-canvas: #f3f7f7;
+  /* ---- Neutrals: near-white tinted toward indigo ---- */
+  --color-canvas: #f3f5ff;
   --color-surface: #ffffff;
-  --color-surface-sunken: #e9f0f1;
-  --color-surface-hover: #eef4f5;
-  --color-border: #d3dfe1;
-  --color-border-strong: #6f878b;
-  --color-text: #12242a;
-  --color-text-muted: #485d62;
-  --color-text-placeholder: #5c7075;
-  --color-text-disabled: #7d8f93;
+  --color-surface-sunken: #e7eafb;
+  --color-surface-hover: #eef1ff;
+  --color-border: #d5daf3;
+  --color-border-strong: #6e739f;
+  --color-text: #15173a;
+  --color-text-muted: #464a74;
+  --color-text-placeholder: #5a5f8a;
+  --color-text-disabled: #8185ab;
 
-  /* ---- Shell: deep petrol ink that owns staff navigation ---- */
-  --color-shell: #0c343c;
-  --color-shell-raised: #124651;
-  --color-shell-border: #1e5762;
-  --color-shell-text: #e8f3f4;
-  --color-shell-text-muted: #a9c7cb;
-  --color-shell-active: #1b5d69;
-  --color-shell-focus: #8fdde6;
+  /* ---- Shell: night indigo ink that owns staff navigation ---- */
+  --color-shell: #11132e;
+  --color-shell-raised: #1c1f45;
+  --color-shell-border: #2b2f63;
+  --color-shell-text: #eef0ff;
+  --color-shell-text-muted: #b7bce6;
+  --color-shell-active: #2a2f6e;
+  --color-shell-focus: #9db2ff;
 
-  /* ---- Primary action: brighter, saturated petrol ---- */
-  --color-primary: #006e7a;
-  --color-primary-hover: #005a64;
-  --color-primary-active: #004a52;
+  /* ---- Primary action: cobalt ---- */
+  --color-primary: #1f4bff;
+  --color-primary-hover: #1636c4;
+  --color-primary-active: #112a9a;
   --color-primary-text: #ffffff;
-  --color-primary-subtle: #dcefef;
-  --color-primary-subtle-text: #00515a;
-  --color-link: #006370;
+  --color-primary-subtle: #e3e7fb;
+  --color-primary-subtle-text: #1636c4;
+  --color-link: #1636c4;
 
   /* ---- Focus, selection, caret ---- */
-  --color-focus: #00838f;
-  --color-selection: #b8e3e6;
-  --color-selection-text: #0a1f24;
-  --color-caret: #006e7a;
+  --color-focus: #1f4bff;
+  --color-selection: #c9d3ff;
+  --color-selection-text: #0f1230;
+  --color-caret: #1f4bff;
 
   /* ---- Scrollbars (thumb >= 3:1 against track and surface) ---- */
-  --color-scrollbar-thumb: #6f878b;
-  --color-scrollbar-track: #e9f0f1;
+  --color-scrollbar-thumb: #6e739f;
+  --color-scrollbar-track: #e7eafb;
 
   /* ---- Status (generic UI feedback) ---- */
   --color-success: #1d6b38;
   --color-success-subtle: #e2f2e6;
   --color-warning: #7a4f00;
   --color-warning-subtle: #fbf0d6;
-  --color-info: #00596a;
-  --color-info-subtle: #ddeff2;
+  --color-info: #1636c4;
+  --color-info-subtle: #e3e7fb;
 
   /* ---- Critical: alert red, reserved for open alerts ---- */
   --color-critical: #b3261e;
@@ -154,6 +154,9 @@
   --control-height-lg: 3rem; /* 48px: patient touch target */
   --row-height: 2.875rem; /* 46px: triage rows (44 to 48) */
   --rail-width: 15rem;
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', var(--font-sans);
+  --grid-columns: 12;
+  --grid-gutter: 1.5rem;
   --topbar-height: 3.5rem;
   --content-max: 90rem;
   --focus-ring-width: 3px;
@@ -167,9 +170,9 @@
   --radius-pill: 999px;
 
   /* ---- Shadows (offset + soft blur, tinted to petrol ink) ---- */
-  --shadow-sm: 0 1px 2px rgb(12 52 60 / 0.08);
-  --shadow-md: 0 2px 6px rgb(12 52 60 / 0.1), 0 1px 2px rgb(12 52 60 / 0.06);
-  --shadow-lg: 0 10px 28px rgb(12 52 60 / 0.16), 0 2px 6px rgb(12 52 60 / 0.08);
+  --shadow-sm: 0 1px 2px rgb(21 23 58 / 0.08);
+  --shadow-md: 0 2px 6px rgb(21 23 58 / 0.1), 0 1px 2px rgb(21 23 58 / 0.06);
+  --shadow-lg: 0 10px 28px rgb(21 23 58 / 0.16), 0 2px 6px rgb(21 23 58 / 0.08);
 
   /* ---- Motion ---- */
   --duration-instant: 80ms;
@@ -199,47 +202,47 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #0b1416;
-    --color-surface: #111d20;
-    --color-surface-sunken: #0a1113;
-    --color-surface-hover: #172629;
-    --color-border: #263a3e;
-    --color-border-strong: #6b8489;
-    --color-text: #e4eeef;
-    --color-text-muted: #a5b8bb;
-    --color-text-placeholder: #93a8ac;
-    --color-text-disabled: #6b7f83;
+    --color-canvas: #0d0f26;
+    --color-surface: #151836;
+    --color-surface-sunken: #0a0b1d;
+    --color-surface-hover: #1c2048;
+    --color-border: #2b2f63;
+    --color-border-strong: #7a80b8;
+    --color-text: #eef0ff;
+    --color-text-muted: #b7bce6;
+    --color-text-placeholder: #a3a8d6;
+    --color-text-disabled: #7378a8;
 
-    --color-shell: #071b1f;
-    --color-shell-raised: #0d2a30;
-    --color-shell-border: #17393f;
-    --color-shell-text: #e4f0f1;
-    --color-shell-text-muted: #9fbcc0;
-    --color-shell-active: #164a53;
-    --color-shell-focus: #8fdde6;
+    --color-shell: #0a0b1d;
+    --color-shell-raised: #151836;
+    --color-shell-border: #2b2f63;
+    --color-shell-text: #eef0ff;
+    --color-shell-text-muted: #b7bce6;
+    --color-shell-active: #2a2f6e;
+    --color-shell-focus: #9db2ff;
 
-    --color-primary: #4cc0cc;
-    --color-primary-hover: #6dd0da;
-    --color-primary-active: #8fdde6;
-    --color-primary-text: #04252a;
-    --color-primary-subtle: #12363b;
-    --color-primary-subtle-text: #a6e4ea;
-    --color-link: #6dd0da;
+    --color-primary: #8aa2ff;
+    --color-primary-hover: #a6b8ff;
+    --color-primary-active: #c0ccff;
+    --color-primary-text: #0b1030;
+    --color-primary-subtle: #1c2048;
+    --color-primary-subtle-text: #c0ccff;
+    --color-link: #a6b8ff;
 
-    --color-focus: #6dd0da;
-    --color-selection: #1d5961;
-    --color-selection-text: #f0fafb;
-    --color-caret: #6dd0da;
+    --color-focus: #a6b8ff;
+    --color-selection: #2f3a8a;
+    --color-selection-text: #f4f6ff;
+    --color-caret: #a6b8ff;
 
-    --color-scrollbar-thumb: #6b8489;
-    --color-scrollbar-track: #0a1113;
+    --color-scrollbar-thumb: #7a80b8;
+    --color-scrollbar-track: #0a0b1d;
 
     --color-success: #6fd08e;
     --color-success-subtle: #12301c;
     --color-warning: #f0c35a;
     --color-warning-subtle: #33280c;
-    --color-info: #6dd0da;
-    --color-info-subtle: #10303a;
+    --color-info: #a6b8ff;
+    --color-info-subtle: #1c2048;
 
     --color-critical: #ff8a80;
     --color-critical-hover: #ffaaa2;

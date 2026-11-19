@@ -1,0 +1,48 @@
+.tir-bar {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+  max-inline-size: 22rem;
+}
+
+.tir-bar__track {
+  display: flex;
+  gap: 1px;
+  block-size: 0.5rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+
+/* A share of 1 % is still drawn at least 6 px wide; the text below carries the exact number. */
+.tir-bar__segment {
+  flex: var(--segment-width) 1 6px;
+  min-inline-size: 6px;
+}
+
+.tir-bar__segment[data-state='VERY_LOW'] {
+  background: var(--color-range-very-low);
+}
+.tir-bar__segment[data-state='LOW'] {
+  background: var(--color-range-low);
+}
+.tir-bar__segment[data-state='IN_RANGE'] {
+  background: var(--color-range-in-range);
+}
+.tir-bar__segment[data-state='HIGH'] {
+  background: var(--color-range-high);
+}
+.tir-bar__segment[data-state='VERY_HIGH'] {
+  background: var(--color-range-very-high);
+}
+
+.tir-bar__text {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}

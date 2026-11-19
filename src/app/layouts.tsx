@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router';
 import { es } from '@/i18n/es';
-import { mocksEnabled } from '@/services/demo/DemoLogin';
-import { ErrorBoundary, MedicalDisclaimer, SimulatedNotice } from '@/ui';
+import { ErrorBoundary, MedicalDisclaimer } from '@/ui';
 
 /** Root of every route: skip link and the error boundary. */
 export function RootLayout() {
@@ -23,11 +22,10 @@ export function LandingLayout() {
   return <Outlet />;
 }
 
-/** Layout of the pages outside a shell (landing, login, design system): notices included. */
+/** Layout of the pages outside a shell (login, design system): regulatory notice included. */
 export function PublicLayout() {
   return (
     <>
-      {mocksEnabled() ? <SimulatedNotice /> : null}
       <main id="main-content" tabIndex={-1}>
         <Outlet />
       </main>

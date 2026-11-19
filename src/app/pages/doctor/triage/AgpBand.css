@@ -1,0 +1,56 @@
+.agp-band {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.agp-band__title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.agp-band__svg {
+  inline-size: 100%;
+  block-size: 7.5rem;
+  overflow: visible;
+  border-block-end: var(--border-width) solid var(--color-border);
+  background:
+    linear-gradient(var(--color-border) 0 0) 0 50% / 100% var(--border-width) no-repeat,
+    var(--color-surface);
+}
+
+.agp-band__target {
+  fill: var(--color-range-in-range-subtle);
+}
+
+.agp-band__iqr {
+  fill: var(--color-primary-subtle);
+}
+
+.agp-band__median {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+}
+
+.agp-band__axis {
+  position: relative;
+  block-size: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.agp-band__tick {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.agp-band__summary,
+.agp-band__empty {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}

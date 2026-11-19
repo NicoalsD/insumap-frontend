@@ -1,11 +1,12 @@
 import { z } from 'zod';
-import { instant, pageOf, simulatedFlag, uuid } from './common';
+import { instant, pageOf, roleSchema, simulatedFlag, uuid } from './common';
 
 export const clinicSchema = z.object({
   id: uuid,
   name: z.string(),
   status: z.enum(['ACTIVE', 'SUSPENDED']),
-  is_demo: z.boolean(),
+  /** Optional contract flag (API.md 1.2), never shown in the UI. */
+  is_demo: z.boolean().default(false),
   simulated: simulatedFlag,
   timezone: z.string(),
 });
@@ -85,3 +86,16 @@ export const careAssignmentSchema = z.object({
 });
 export type CareAssignmentDto = z.infer<typeof careAssignmentSchema>;
 export const careAssignmentPageSchema = pageOf(careAssignmentSchema);
+
+/** `GET /users?role=` (API.md 8.3): clinic staff for the admin console. Never clinical data. */
+export const staffUserSchema = z.object({
+  id: uuid,
+  full_name: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  status: z.enum(['ACTIVE', 'INACTIVE']),
+  /** Active care-team assignments of this staff member (primary or not). */
+  patients_count: z.number().int(),
+});
+export type StaffUserDto = z.infer<typeof staffUserSchema>;
+export const staffUserPageSchema = pageOf(staffUserSchema);

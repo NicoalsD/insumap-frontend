@@ -22,6 +22,12 @@ export const PERMISSIONS = {
   credentialsIssue: 'credentials.issue',
   careTeamRead: 'care_team.read',
   clinicRead: 'clinics.read',
+  treatmentPlanReadOwn: 'treatment_plans.read_own',
+  remindersManageOwn: 'reminders.manage_own',
+  clinicalNotesManage: 'clinical_notes.manage',
+  messagesUseOwn: 'messages.use_own',
+  messagesUseAssigned: 'messages.use_assigned',
+  usersRead: 'users.read',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

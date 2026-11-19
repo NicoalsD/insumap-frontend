@@ -1,0 +1,82 @@
+/* One row: window, search, then the segments. Wraps only below the container's 40rem breakpoint. */
+.triage-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  overflow-x: auto;
+}
+
+.triage-toolbar__window {
+  flex: 0 0 12rem;
+}
+
+.triage-toolbar__search {
+  flex: 1 1 14rem;
+  min-inline-size: 12rem;
+  max-inline-size: 18rem;
+}
+
+.triage-toolbar .ui-field {
+  gap: var(--space-1);
+}
+
+.triage-segments {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  align-items: center;
+  align-self: end;
+}
+
+.triage-segments__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 44px;
+  padding-inline: var(--space-3);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.triage-segments__item:hover {
+  background: var(--color-surface-hover);
+}
+
+.triage-segments__item[aria-pressed='true'] {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary-subtle-text);
+  font-weight: 600;
+}
+
+.triage-segments__item:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.triage-segments__count {
+  min-inline-size: 1.5em;
+  padding-inline: var(--space-1);
+  text-align: center;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+}
+
+.triage-toolbar > .ui-button {
+  align-self: end;
+}
+
+@container (max-width: 40rem) {
+  .triage-toolbar {
+    flex-wrap: wrap;
+  }
+}

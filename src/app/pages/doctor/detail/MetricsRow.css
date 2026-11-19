@@ -1,0 +1,62 @@
+.metrics-row__window {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.metrics-row__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height-md);
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.metrics-row__option:focus-within {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.metrics-row__body {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.metrics-row__figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.metrics-row__figure dt {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.metrics-row__figure dd {
+  margin: 0;
+}
+
+.metrics-row__figure .measure {
+  font-size: var(--font-size-xl);
+}
+
+.metrics-row__delta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.metrics-row__note {
+  margin: 0;
+  padding: var(--space-3) var(--space-5) 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
