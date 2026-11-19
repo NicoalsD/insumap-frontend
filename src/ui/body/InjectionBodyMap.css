@@ -120,6 +120,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  /* A 48 px target, the patient surface's minimum (PRODUCT.md). */
+  min-block-size: 3rem;
   padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-pill);
@@ -135,7 +137,7 @@
 
 .ibm__chip-action {
   flex: none;
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
   background: var(--color-primary);
   color: var(--color-primary-text);

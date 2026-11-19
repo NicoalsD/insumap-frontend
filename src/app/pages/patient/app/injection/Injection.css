@@ -87,13 +87,17 @@
 .injection-layer__other {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-1) var(--space-3);
   margin: 0;
   color: var(--color-text-muted);
 }
 
+/* Reads as a link, but the whole 48 px row is the target (PRODUCT.md, patient surface). */
 .injection-layer__back {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 3rem;
   padding: 0;
   border: 0;
   background: none;
