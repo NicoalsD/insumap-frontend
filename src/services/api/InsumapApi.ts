@@ -146,7 +146,7 @@ export class InsumapApi {
   }
 
   getCurrentUser(): Promise<CurrentUserDto> {
-    return this.request({ method: 'GET', path: '/auth/me', schema: currentUserSchema });
+    return this.request({ method: 'GET', path: '/auth/current-user', schema: currentUserSchema });
   }
 
   /** Restores a session after a reload from the refresh cookie. Resolves `false` when there is none. */
@@ -267,7 +267,7 @@ export class InsumapApi {
   getOwnOverview(window: MetricsWindow) {
     return this.request({
       method: 'GET',
-      path: '/patients/me/overview',
+      path: '/patients/own/overview',
       query: { window },
       schema: ownOverviewSchema,
     });
@@ -285,7 +285,7 @@ export class InsumapApi {
   getOwnMetrics(window: MetricsWindow) {
     return this.request({
       method: 'GET',
-      path: '/patients/me/metrics',
+      path: '/patients/own/metrics',
       query: { window },
       schema: metricsResponseSchema,
     });

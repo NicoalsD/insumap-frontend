@@ -8,7 +8,7 @@
 export abstract class DashboardWidget {
   constructor(
     readonly id: string,
-    /** Permission code from `/auth/me` needed to show this node; `null` means always. */
+    /** Permission code from `/auth/current-user` needed to show this node; `null` means always. */
     readonly requiredPermission: string | null = null,
   ) {}
 

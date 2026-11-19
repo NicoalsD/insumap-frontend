@@ -3,7 +3,7 @@ import { es } from '@/i18n/es';
 import type { SessionViewModel } from '@/services/adapters/SessionViewModelAdapter';
 import type { NavItem } from '../navigation';
 
-/** Navigation list filtered by the permissions of `/auth/me` (UX only). */
+/** Navigation list filtered by the permissions of `/auth/current-user` (UX only). */
 export function ShellNav({ items, session }: { items: readonly NavItem[]; session: SessionViewModel }) {
   return (
     <nav className="shell-nav" aria-label={es.nav.main}>

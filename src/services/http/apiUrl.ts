@@ -13,7 +13,7 @@ export function apiBaseUrl(configured: string | undefined = import.meta.env.VITE
 }
 
 /**
- * Builds the absolute URL of an API path such as `/patients/me/overview`.
+ * Builds the absolute URL of an API path such as `/patients/own/overview`.
  * The client and the MSW handlers both use it, so they can never drift apart.
  * `null`/`undefined` query values are skipped; arrays repeat the key.
  */

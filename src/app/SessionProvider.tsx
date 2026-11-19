@@ -9,7 +9,7 @@ const ANONYMOUS: SessionState = { status: 'anonymous', session: null };
 
 /**
  * Holds who is signed in. On mount it tries the refresh cookie (a reload loses the in-memory
- * access token), then reads `/auth/me`. Whenever the token disappears (logout, revoked session,
+ * access token), then reads `/auth/current-user`. Whenever the token disappears (logout, revoked session,
  * failed refresh) it goes back to anonymous and drops cached server data.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {

@@ -18,7 +18,7 @@ export const glycemicMetricsSchema = z.object({
 });
 export type GlycemicMetricsDto = z.infer<typeof glycemicMetricsSchema>;
 
-/** `GET /patients/{id}/metrics` and `GET /patients/me/metrics`. */
+/** `GET /patients/{id}/metrics` and `GET /patients/own/metrics`. */
 export const metricsResponseSchema = z.object({
   window: windowSchema,
   period_from: instant,
@@ -177,7 +177,7 @@ export const patientOverviewSchema = z.object({
 });
 export type PatientOverviewDto = z.infer<typeof patientOverviewSchema>;
 
-/** `GET /patients/me/overview`: no recommendations and no forecast, the patient never sees AI doses. */
+/** `GET /patients/own/overview`: no recommendations and no forecast, the patient never sees AI doses. */
 export const ownOverviewSchema = patientOverviewSchema.omit({
   pending_recommendations: true,
   latest_forecast: true,

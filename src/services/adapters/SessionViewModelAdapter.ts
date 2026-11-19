@@ -17,7 +17,7 @@ export interface SessionViewModel {
 }
 
 /**
- * Session of the signed-in user from `GET /auth/me`.
+ * Session of the signed-in user from `GET /auth/current-user`.
  *
  * Pattern: P06 Adapter
  */
