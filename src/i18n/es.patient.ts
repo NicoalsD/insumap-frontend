@@ -142,6 +142,7 @@ export const patientStrings = {
   messages: {
     title: 'Mensajes',
     description: 'Escribe a tu equipo de atención.',
+    asideTitle: 'Aviso sobre emergencias',
     emergency: 'Este canal no es para emergencias ni para dosis urgentes. Si es una emergencia llama a tu línea de urgencias.',
     empty: 'Todavía no hay mensajes. Escribe a tu equipo cuando lo necesites.',
     label: 'Mensaje para tu equipo',
@@ -244,6 +245,7 @@ export const patientStrings = {
   assistant: {
     title: 'Asistente',
     description: 'Preguntas generales sobre tu tratamiento, con material aprobado por tu clínica.',
+    asideLabel: 'Aviso del asistente',
     notice: 'Asistente educativo: no da dosis ni diagnósticos.',
     label: 'Escribe tu pregunta',
     placeholder: 'Escribe tu pregunta…',
