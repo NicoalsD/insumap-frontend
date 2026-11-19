@@ -1,6 +1,6 @@
 # Insumap - Frontend
 
-Cliente web de Insumap: PWA del paciente (mobile first), dashboard del médico con triage y consola del administrador de la clínica.
+Cliente web de Insumap, diseñado primero para escritorio (1280 a 1920 px, base de 1440 px) y adaptado hacia abajo: PWA del paciente (instalable, usable desde 360 px), dashboard del médico con triage y consola del administrador de la clínica.
 
 Consume la API de `insumap-backend`. Toda vista con datos de la clínica demo muestra "Datos simulados".
 

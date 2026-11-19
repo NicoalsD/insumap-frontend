@@ -87,7 +87,7 @@ Ejemplos válidos:
 
 ```text
 feat: agrega la lista de triage del dashboard médico
-fix: corrige el desbordamiento de la gráfica AGP en móvil
+fix: corrige el desbordamiento de la gráfica AGP en pantallas de 360 px
 test: cubre el flujo de activación con Playwright
 ```
 
@@ -121,7 +121,7 @@ npx playwright test        # E2E y accesibilidad con axe
 
 - Antes de cualquier tarea de HTML, CSS o JS del cliente se consulta el skill `modern-web-guidance`.
 - Sin valores quemados: textos en el catálogo en español, límites en constantes con nombre.
-- Las pantallas deben pasar axe sin violaciones y funcionar en móvil.
+- Las pantallas deben pasar axe sin violaciones y funcionar en escritorio y, en la PWA del paciente, desde 360 px.
 - Los patrones usados (Mediator, Adapter, Facade, Strategy, Composite) se listan en el PR.
 
 ## 6. Datos y secretos

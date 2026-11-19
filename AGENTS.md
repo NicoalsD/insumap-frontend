@@ -18,7 +18,7 @@ Insumap es una plataforma B2B2C de monitoreo de pacientes con diabetes para hosp
 > **Aviso:** Insumap es un proyecto académico. **No es un dispositivo médico**, no reemplaza el criterio clínico y la IA solo apoya al médico, que toma todas las decisiones. Todos los pacientes son simulados.
 
 Este repositorio es la aplicación web en **React 19 + Vite + TypeScript**:
-- **PWA del paciente** (mobile first): registros de glucosa, insulina, comidas, actividad y síntomas (también sin conexión, por lotes), gráficas, plan activo, recordatorios, mensajes con su médico, asistente educativo, consentimiento y privacidad.
+- **PWA del paciente** (instalable, usable desde 360 px): registros de glucosa, insulina, comidas, actividad y síntomas (también sin conexión, por lotes), gráficas, plan activo, recordatorios, mensajes con su médico, asistente educativo, consentimiento y privacidad.
 - **Dashboard del médico:** triage, detalle del paciente (AGP, TIR, línea de tiempo), plan de tratamiento, recomendaciones de IA (aprobar, modificar o rechazar con motivo), alertas, notas, mensajes, controles y reportes. Solo ve sus pacientes asignados.
 - **Consola del admin de clínica:** importar pacientes, emitir y reenviar credenciales, médicos y usuarios, equipos de atención, metas, reglas de alerta, plantillas de protocolo, auditoría y KPIs. No ve datos clínicos detallados.
 
@@ -100,7 +100,7 @@ Se hacen con draw.io (MCP de draw.io y sus iconos). El fuente `.drawio` y su `.p
 
 ### 3.7 Diseño, accesibilidad y contenido clínico
 - Dirección visual con los skills `frontend-design` e `impeccable`; colores, tipografía y espacios solo desde tokens CSS (`.agents/design-theme.md`).
-- PWA del paciente mobile first desde 360 px; dashboard y consola responsive.
+- Escritorio primero (1280 a 1920 px, diseño base de 1440 px) en todas las superficies: PWA del paciente, dashboard del médico, consola del administrador y landing; luego se adaptan hacia abajo. La PWA del paciente sigue usable desde 360 px (criterio secundario).
 - WCAG 2.2 AA verificado con axe; objetivos táctiles de al menos 48 px en la PWA; foco visible y navegación por teclado.
 - Los rangos de glucosa no dependen solo del color; la unidad (mg/dL) siempre se muestra.
 - Todo contenido de IA se rotula como sugerencia pendiente de la decisión del médico. El paciente nunca ve una dosis sugerida por la IA.
@@ -141,7 +141,7 @@ Capas propuestas, como en CAUDAL (se fijan en `.agents/architecture.md`): `src/a
 - [ ] `npm run typecheck && npm run lint && npm test` en verde; cobertura de `src/core` ≥ 90 %, global ≥ 80 %.
 - [ ] Playwright en verde y axe sin violaciones.
 - [ ] Sin textos ni números quemados; sin secretos.
-- [ ] WCAG 2.2 AA y usable desde 360 px.
+- [ ] WCAG 2.2 AA; diseñado primero para escritorio y, en la PWA del paciente, usable desde 360 px.
 - [ ] Aviso médico y "Datos simulados" visibles donde corresponde.
 - [ ] Documentación y diagramas actualizados.
 - [ ] Commits con la cuenta del integrante responsable y sin atribución a IA.
