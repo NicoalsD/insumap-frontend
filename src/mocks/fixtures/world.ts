@@ -744,6 +744,12 @@ function percentile(sorted: readonly number[], p: number): number {
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
 /** Everything the mock API serves, built from one clock so "last reading" is always recent. */
+/** Triage row as the fixtures build it: the summary the API sends plus the metrics the mocks keep. */
+export type FixtureTriageRow = TriageRowDto & {
+  readonly metrics: MetricsResponseDto;
+  readonly pending_recommendations_count: number;
+};
+
 export interface FixtureWorld {
   readonly now: Date;
   readonly specs: readonly PatientSpec[];
@@ -772,7 +778,9 @@ export interface FixtureWorld {
   staffUsers(): StaffUserDto[];
   findOwnReading(patientId: string, clientReadingId: string): GlucoseReadingDto | undefined;
   addOwnReading(patientId: string, reading: GlucoseReadingDto): GlucoseReadingDto;
-  triage(window: MetricsWindow): TriageRowDto[];
+  /** A plan by id: the seeded ones and the summary plans of the overviews. */
+  planById(planId: string): TreatmentPlanDto | null;
+  triage(window: MetricsWindow): FixtureTriageRow[];
   overview(patientId: string, window: MetricsWindow): PatientOverviewDto | null;
   metrics(patientId: string, window: MetricsWindow): MetricsResponseDto | null;
   /** Newest first: own registered readings merged with the sensor history. */
@@ -1017,6 +1025,14 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
         b.measured_at.localeCompare(a.measured_at),
       );
     },
+    planById(planId) {
+      for (const plan of world.plans.values()) if (plan.id === planId) return plan;
+      for (const spec of SPECS) {
+        const summary = planSummaryOf(patientId(spec.n), spec);
+        if (summary.id === planId) return { ...summary, updated_at: now.toISOString() };
+      }
+      return null;
+    },
     triage(window) {
       return [...SPECS]
         .sort((a, b) => b.score - a.score)
@@ -1033,6 +1049,7 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
             (r) => r.patient_id === patientId(spec.n) && r.status === 'PROPOSED',
           ).length,
           metrics: metricsFrom(spec, generatedFor(spec), window, now),
+          tir_pct: metricsFrom(spec, generatedFor(spec), window, now).metrics.tir_pct,
           last_reading: {
             value_mg_dl: spec.lastValue,
             measured_at: new Date(now.getTime() - spec.lastMinutesAgo * MINUTE_MS).toISOString(),
@@ -1042,14 +1059,14 @@ export function createWorld(now: Date = new Date()): FixtureWorld {
           simulated: false,
         }));
     },
-    overview(id, window) {
+    overview(id) {
       const spec = specOf(id);
       if (!spec) return null;
       return {
         patient: { id, full_name: spec.fullName, ...injectionFieldsOf(spec.n) },
         target_profile: spec.profile,
+        timezone: 'America/Bogota',
         latest_readings: (world.readings(id) ?? []).slice(0, 12),
-        metrics: metricsFrom(spec, generatedFor(spec), window, now),
         active_plan: planSummaryOf(id, spec),
         open_alerts: world.alerts.filter((a) => a.patient_id === id && a.status !== 'RESOLVED'),
         pending_recommendations: world.recommendations.filter(

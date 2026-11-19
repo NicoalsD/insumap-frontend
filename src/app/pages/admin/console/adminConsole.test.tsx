@@ -8,6 +8,7 @@ import type { CareAssignmentDto, PatientAdminDto, StaffUserDto } from '@/service
 import { apiUrl } from '@/services/http/apiUrl';
 import { ADMIN_ACCOUNT, DEMO_CLINIC } from '@/mocks/fixtures/people';
 import { mockState } from '@/mocks/MockState';
+import { wireUser } from '@/mocks/wire';
 import { server } from '@/mocks/server';
 import { apiError } from '@/mocks/http';
 import { expectNoAxeViolations } from '@/test/axe';
@@ -310,8 +311,23 @@ describe('staff', () => {
       http.get(apiUrl('/users'), ({ request }) => {
         const role = new URL(request.url).searchParams.get('role');
         const items = role === null ? STAFF : STAFF.filter((member) => member.role === role);
-        return HttpResponse.json({ items, next_cursor: null });
+        return HttpResponse.json({ items: items.map(wireUser), next_cursor: null });
       }),
+      // The API sends no patient counts: they come from the open care-team assignments.
+      http.get(apiUrl('/care-team/assignments'), () =>
+        HttpResponse.json({
+          items: ['p1', 'p2'].map((id) => ({
+            id: `a-${id}`,
+            patient_id: id,
+            doctor_id: DOCTOR_ID,
+            is_primary: true,
+            started_at: '2026-11-01T00:00:00Z',
+            ended_at: null,
+            end_reason: null,
+          })),
+          next_cursor: null,
+        }),
+      ),
     );
   });
 

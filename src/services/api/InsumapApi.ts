@@ -7,6 +7,7 @@ import {
   currentUserSchema,
   loginResponseSchema,
   mfaConfirmSchema,
+  privacyNoticeSchema,
   mfaEnrollmentSchema,
   sessionTokenSchema,
   type CurrentUserDto,
@@ -30,22 +31,16 @@ import {
   messageSchema,
   reminderPageSchema,
   reminderSchema,
-  treatmentPlanSchema,
   type MessageCreateDto,
   type ReminderUpdateDto,
 } from '../dto/care';
 import {
-  agpResponseSchema,
   alertPageSchema,
   alertSchema,
   glucoseReadingPageSchema,
   glucoseReadingSchema,
-  metricsResponseSchema,
-  ownOverviewSchema,
-  patientOverviewSchema,
   recommendationPageSchema,
   recommendationSchema,
-  triagePageSchema,
   type ReadingCreateDto,
 } from '../dto/clinical';
 import type { MetricsWindow } from '../dto/common';
@@ -57,6 +52,17 @@ import {
   type InsulinDoseCreateDto,
   type InsulinKind,
 } from '../dto/injection';
+import {
+  agpResponseSchema as wireAgpSchema,
+  insulinTimelineSchema,
+  metricsResponseSchema as wireMetricsSchema,
+  overviewResponseSchema,
+  planResponseSchema,
+  triagePageSchema as wireTriageSchema,
+  usersPageSchema,
+} from '../dto/wire';
+import { pageOf } from '../dto/common';
+import { targetProfileSchema, type TargetProfileDto } from '../dto/targetProfile';
 import { fieldLimitsResponseSchema, type FieldLimitsDto } from '../dto/meta';
 import {
   assistantReplySchema,
@@ -69,6 +75,10 @@ import { ApiError } from './ApiError';
 export const REQUESTED_WITH = { name: 'X-Requested-With', value: 'insumap-web' } as const;
 
 const REFRESH_PATH = '/auth/refresh';
+/** How many mismatching fields the development warning lists. */
+const MAX_REPORTED_ISSUES = 14;
+/** Bound on the assignment pages read to count each doctor's patients. */
+const MAX_COUNT_PAGES = 100;
 const JSON_TYPE = 'application/json';
 
 export interface InsumapApiOptions {
@@ -188,6 +198,16 @@ export class InsumapApi {
     }
   }
 
+  /** Public: the privacy notice text of a clinic version, read before the patient accepts it. */
+  getPrivacyNotice(privacyNoticeVersionId: string) {
+    return this.request({
+      method: 'GET',
+      path: `/public/privacy-notices/${privacyNoticeVersionId}`,
+      schema: privacyNoticeSchema,
+      auth: false,
+    });
+  }
+
   verifyActivation(activationCode: string, birthDate: string) {
     return this.request({
       method: 'POST',
@@ -278,16 +298,37 @@ export class InsumapApi {
   // ---- Clinical -----------------------------------------------------------------------
 
   getTriage(query: QueryParams = {}) {
-    return this.request({ method: 'GET', path: '/dashboard/triage', query, schema: triagePageSchema });
+    return this.request({ method: 'GET', path: '/dashboard/triage', query, schema: wireTriageSchema });
   }
 
-  getPatientOverview(patientId: string, window: MetricsWindow) {
+  /** Marks the patient as reviewed by the doctor for the window; the triage then lists it as reviewed. */
+  markPatientReviewed(patientId: string, window: MetricsWindow) {
     return this.request({
+      method: 'POST',
+      path: `/dashboard/patients/${patientId}/review`,
+      query: { window },
+      schema: z.object({ patient_id: z.string(), reviewed_at: z.string() }),
+    });
+  }
+
+  /** The overview names its profile by code; the doctor also reads the label from the profile itself. */
+  async getPatientOverview(patientId: string, window: MetricsWindow) {
+    const overview = await this.request({
       method: 'GET',
       path: `/patients/${patientId}/overview`,
       query: { window },
-      schema: patientOverviewSchema,
+      schema: overviewResponseSchema,
     });
+    try {
+      const full = await this.request({
+        method: 'GET',
+        path: `/target-profiles/${overview.target_profile.id}`,
+        schema: targetProfileSchema,
+      });
+      return { ...overview, target_profile: { ...overview.target_profile, label: full.label } };
+    } catch {
+      return overview;
+    }
   }
 
   getOwnOverview(window: MetricsWindow) {
@@ -295,7 +336,7 @@ export class InsumapApi {
       method: 'GET',
       path: '/patients/own/overview',
       query: { window },
-      schema: ownOverviewSchema,
+      schema: overviewResponseSchema,
     });
   }
 
@@ -304,7 +345,7 @@ export class InsumapApi {
       method: 'GET',
       path: `/patients/${patientId}/metrics`,
       query: { window },
-      schema: metricsResponseSchema,
+      schema: wireMetricsSchema,
     });
   }
 
@@ -313,7 +354,7 @@ export class InsumapApi {
       method: 'GET',
       path: '/patients/own/metrics',
       query: { window },
-      schema: metricsResponseSchema,
+      schema: wireMetricsSchema,
     });
   }
 
@@ -322,7 +363,7 @@ export class InsumapApi {
       method: 'GET',
       path: `/patients/${patientId}/metrics/agp`,
       query,
-      schema: agpResponseSchema,
+      schema: wireAgpSchema,
     });
   }
 
@@ -404,8 +445,12 @@ export class InsumapApi {
   }
 
   /** The active plan in plain language. It never carries an AI dose. */
+  getTreatmentPlan(planId: string) {
+    return this.request({ method: 'GET', path: `/treatment-plans/${planId}`, schema: planResponseSchema });
+  }
+
   getOwnTreatmentPlan() {
-    return this.request({ method: 'GET', path: '/patients/own/treatment-plan', schema: treatmentPlanSchema });
+    return this.request({ method: 'GET', path: '/patients/own/treatment-plan', schema: planResponseSchema });
   }
 
   /** Where to inject now for the given kind of insulin (BRIEF-injection). The API never suggests units. */
@@ -432,9 +477,9 @@ export class InsumapApi {
   listPatientInsulinDoses(patientId: string, query: QueryParams = {}) {
     return this.request({
       method: 'GET',
-      path: `/patients/${patientId}/insulin-doses`,
-      query,
-      schema: insulinDosePageSchema,
+      path: `/patients/${patientId}/timeline`,
+      query: { ...query, event_types: ['INSULIN'] },
+      schema: insulinTimelineSchema,
     });
   }
 
@@ -485,10 +530,45 @@ export class InsumapApi {
     return this.request({ method: 'POST', path: '/assistant/messages', body, schema: assistantReplySchema });
   }
 
+  /** The clinic's default target profile (the triage list classifies with it). */
+  async getDefaultTargetProfile(): Promise<TargetProfileDto> {
+    const page = await this.request({
+      method: 'GET',
+      path: '/target-profiles',
+      query: { status: 'ACTIVE' },
+      schema: pageOf(targetProfileSchema.extend({ status: z.string().optional() })),
+    });
+    const found = page.items.find((profile) => profile.is_default === true) ?? page.items[0];
+    if (!found) throw new ApiError(HTTP_STATUS.NOT_FOUND, 'NOT_FOUND');
+    return found;
+  }
+
   // ---- Admin: clinic staff (API.md 8.3) ----------------------------------------------
 
-  listUsers(query: QueryParams = {}) {
-    return this.request({ method: 'GET', path: '/users', query, schema: staffUserPageSchema });
+  /** Staff list. The API sends no patient counts: they are the open care-team assignments per doctor. */
+  async listUsers(query: QueryParams = {}): Promise<z.output<typeof staffUserPageSchema>> {
+    const page = await this.request({ method: 'GET', path: '/users', query, schema: usersPageSchema });
+    const counts = new Map<string, number>();
+    let cursor: string | undefined;
+    for (let pages = 0; pages < MAX_COUNT_PAGES; pages += 1) {
+      const assignments = await this.listCareAssignments({ status: 'ACTIVE', cursor });
+      for (const assignment of assignments.items) {
+        counts.set(assignment.doctor_id, (counts.get(assignment.doctor_id) ?? 0) + 1);
+      }
+      if (assignments.next_cursor === null) break;
+      cursor = assignments.next_cursor;
+    }
+    return {
+      next_cursor: page.next_cursor,
+      items: page.items.map((user) => ({
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email ?? '',
+        role: user.role,
+        status: user.is_active ? ('ACTIVE' as const) : ('INACTIVE' as const),
+        patients_count: counts.get(user.id) ?? 0,
+      })),
+    };
   }
 
   // ---- Transport ------------------------------------------------------------------------
@@ -573,6 +653,13 @@ export class InsumapApi {
     if (!spec.schema) return undefined as Output<S>;
     const parsed = spec.schema.safeParse(await readJson(response));
     if (!parsed.success) {
+      if (import.meta.env.DEV) {
+        // Solo en desarrollo: dice qué campo del contrato real no coincide con el esquema.
+        console.warn(
+          `[contrato] ${spec.method} ${spec.path}`,
+          parsed.error.issues.slice(0, MAX_REPORTED_ISSUES).map((issue) => `${issue.path.join('.')}: ${issue.message}`),
+        );
+      }
       throw new ApiError(response.status, 'UNKNOWN', {}, 'INVALID_RESPONSE');
     }
     return parsed.data as Output<S>;

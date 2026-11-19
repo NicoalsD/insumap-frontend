@@ -57,3 +57,16 @@ Con Mock Service Worker, el login acepta estas cuentas ficticias (dominio reserv
 | Médico | `mauricio.henao@example.test` | `clave-ficticia-medico` |
 | Admin de clínica | `marta.pineda@example.test` | `clave-ficticia-admin` |
 | Paciente | `luisa.ortiz@example.test` | `clave-ficticia-paciente` |
+
+## Contra el backend real (desarrollo local)
+
+Con `VITE_USE_MOCKS=false` el cliente habla con la API por el proxy de Vite (`/api` hacia `http://localhost:8000`, o el valor de `INSUMAP_API_URL`). La base se migra y se siembra con el repo de la base de datos y `uv run python -m tests.support.dev_seed` del backend, que crea la "Clínica del Valle" con 13 pacientes y 14 días de lecturas.
+
+| Rol | Correo | Contraseña | Segundo factor |
+|---|---|---|---|
+| Médica | `medica.demo@example.test` | `contrasena-demo-larga` | TOTP (se enrola la primera vez) |
+| Admin de clínica | `admin.demo@example.test` | `contrasena-demo-larga` | TOTP (se enrola la primera vez) |
+| Paciente | `paciente.demo@example.test` | `contrasena-demo-larga` | No lleva |
+| Paciente invitada (activación) | código `7K3F-9QXM-2D8H-WV4T`, nacimiento `1975-06-15` | La elige al activar | No lleva |
+
+Son valores de desarrollo que viven en `tests/support/db_seed.py` del backend; nunca se usan fuera de una base local. El personal enrola su autenticador en `/mfa/enrollment` (QR o clave manual) y confirma con un código de 6 dígitos.

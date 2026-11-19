@@ -49,6 +49,14 @@ export const activationVerifySchema = z.object({
   email_required: z.boolean(),
 });
 
+/** `GET /public/privacy-notices/{id}`: the notice text the patient accepts at activation. */
+export const privacyNoticeSchema = z.object({
+  id: z.string(),
+  version: z.string(),
+  text: z.string(),
+});
+export type PrivacyNoticeDto = z.infer<typeof privacyNoticeSchema>;
+
 export const activationCompleteSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('AUTHENTICATED'), access_token: z.string() }),
   z.object({ status: z.literal('MFA_ENROLLMENT_REQUIRED'), access_token: z.string() }),

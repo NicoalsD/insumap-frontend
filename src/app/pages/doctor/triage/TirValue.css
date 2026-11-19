@@ -1,0 +1,24 @@
+.tir-value {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 5rem;
+  max-inline-size: 9rem;
+}
+
+.tir-value__text {
+  font-weight: 700;
+}
+
+.tir-value__track {
+  display: block;
+  block-size: 0.375rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.tir-value__fill {
+  display: block;
+  block-size: 100%;
+  background: var(--color-range-in-range);
+}

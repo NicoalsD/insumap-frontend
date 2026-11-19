@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import { apiError } from '@/mocks/http';
+import { wireTimelineDose } from '@/mocks/wire';
 import { server } from '@/mocks/server';
 import { DEMO_TOTP_CODE, DOCTOR_ACCOUNT } from '@/mocks/fixtures/people';
 import { patientId } from '@/mocks/fixtures/ids';
@@ -112,7 +113,9 @@ describe('patient detail (P19 AGP, P06 adapters, P08 layout, P15 window in URL)'
         dose(20, 'THIGH_RIGHT'),
       ];
       server.use(
-        http.get(apiUrl('/patients/:patient_id/insulin-doses'), () => HttpResponse.json({ items, next_cursor: null })),
+        http.get(apiUrl('/patients/:patient_id/timeline'), () =>
+          HttpResponse.json({ items: items.map(wireTimelineDose), next_cursor: null, simulated: false }),
+        ),
       );
       await openRecord();
       expect(await screen.findByText(es.detail.injection.concentrationTitle)).toBeInTheDocument();
@@ -138,9 +141,10 @@ describe('patient detail (P19 AGP, P06 adapters, P08 layout, P15 window in URL)'
       await openRecord();
       await screen.findByRole('heading', { level: 2, name: es.detail.timeline.title });
       const items = () => document.querySelectorAll('.timeline__item').length;
-      expect(items()).toBe(TIMELINE_PAGE_SIZE);
-      await userEvent.click(screen.getByRole('button', { name: es.detail.timeline.showMore }));
-      expect(items()).toBe(TIMELINE_PAGE_SIZE * 2);
+      // The readings arrive page by page; the list fills when the last one lands.
+      await waitFor(() => { expect(items()).toBe(TIMELINE_PAGE_SIZE); });
+      await userEvent.click(await screen.findByRole('button', { name: es.detail.timeline.showMore }));
+      await waitFor(() => { expect(items()).toBe(TIMELINE_PAGE_SIZE * 2); });
     },
     TEST_TIMEOUT_MS,
   );

@@ -7,7 +7,7 @@ import { Badge } from '@/ui/Badge';
 import { RangeRuler } from '@/ui/glucose/RangeRuler';
 import { formatClock, formatElapsed } from './formatting';
 import { riskBadgeTone, type SortDirection, type TriageItem, type TriageSortColumn } from './triageModel';
-import { TirBar } from './TirBar';
+import { TirValue } from './TirValue';
 import './TriageQueue.css';
 
 /** Rows shown before "Mostrar más". Above this, the list pages instead of rendering every row. */
@@ -170,13 +170,13 @@ function TriageRow({ row, selected, now, onSelect }: TriageRowProps) {
         <Badge tone={riskBadgeTone(row.riskTier)}>{es.risk[row.riskTier]}</Badge>
       </td>
       <td className="triage-table__tir">
-        <TirBar timeInRanges={row.metrics.timeInRanges} />
+        <TirValue tirPct={row.tirPct} />
       </td>
       <td className="triage-table__last">
         {row.lastReading ? (
           <div className="triage-last">
             <div className="triage-last__ruler">
-              <RangeRuler valueMgDl={row.lastReading.valueMgDl} thresholds={row.metrics.profile.thresholds} size="compact" showTarget={false} />
+              <RangeRuler valueMgDl={row.lastReading.valueMgDl} thresholds={row.thresholds} size="compact" showTarget={false} />
             </div>
             <span className="triage-table__time">
               {formatClock(row.lastReading.measuredAt, row.timezone)} · {formatElapsed(row.lastReading.measuredAt, now)}

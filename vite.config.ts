@@ -8,6 +8,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  server: {
+    // Con VITE_USE_MOCKS=false el navegador habla con la API del mismo sitio (cookie SameSite=Strict).
+    proxy: { '/api': { target: process.env.INSUMAP_API_URL ?? 'http://localhost:8000' } },
+  },
   test: {
     environment: 'jsdom',
     globals: false,

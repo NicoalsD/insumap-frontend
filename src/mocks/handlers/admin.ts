@@ -8,6 +8,7 @@ import { parseCsvImport, parseFhirImport, type ImportCandidate, type ParsedImpor
 import { apiError, paginate, readBody, validationError } from '../http';
 import type { MockState } from '../MockState';
 import { guard } from './guard';
+import { wireUser } from '../wire';
 
 const FALLBACK_PAGE_DEFAULT = 20;
 const FALLBACK_PAGE_MAX = 100;
@@ -187,7 +188,7 @@ export function adminHandlers(state: MockState) {
       const items = state.world
         .staffUsers()
         .filter((user) => (role === null ? user.role !== 'PATIENT' : user.role === role));
-      return HttpResponse.json(page(items, url));
+      return HttpResponse.json(page(items.map(wireUser), url));
     }),
 
     http.get(apiUrl('/care-team/assignments'), ({ request }) => {

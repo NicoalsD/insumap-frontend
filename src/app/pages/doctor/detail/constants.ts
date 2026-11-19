@@ -4,8 +4,8 @@ export const HOURS_PER_DAY = 24;
 export const MINUTES_PER_HOUR = 60;
 export const HOUR_MS = 3_600_000;
 export const DAY_MS = 86_400_000;
-/** Largest page the readings endpoint serves (API.md 8.6); the 14-day sensor history fits in one page. */
-export const READINGS_LIMIT = 2000;
+/** Largest page the readings endpoint serves (`page_size_max`); a window is read page by page. */
+export const READINGS_PAGE = 100;
 /** Safety bound on cursor loops over the triage list. */
 export const MAX_PAGES = 100;
 /** Timeline entries shown at first, and how many more each "Ver más" adds. */

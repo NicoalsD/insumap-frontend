@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useApi } from '@/state/useApi';
 import type { AlertViewModel } from '@/services/adapters/AlertViewModelAdapter';
 import { AlertViewModelAdapter } from '@/services/adapters/AlertViewModelAdapter';
+import { TargetProfileViewModelAdapter } from '@/services/adapters/TargetProfileViewModelAdapter';
 import { TriageViewModelAdapter } from '@/services/adapters/TriageViewModelAdapter';
 import type { AlertDto } from '@/services/dto/clinical';
 import type { MetricsWindow } from '@/services/dto/common';
@@ -34,6 +35,7 @@ export async function fetchAllPages<T>(fetchPage: (cursor: string | undefined) =
 }
 
 const triageAdapter = new TriageViewModelAdapter();
+const profileAdapter = new TargetProfileViewModelAdapter();
 const alertAdapter = new AlertViewModelAdapter();
 
 /**
@@ -46,8 +48,22 @@ export function useTriageRows(window: MetricsWindow) {
     queryKey: [...triageKey, window],
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<TriageItem[]> => {
-      const dtos = await fetchAllPages((cursor) => api.getTriage({ window, cursor }));
-      return dtos.map((dto) => ({ ...triageAdapter.adapt(dto), timezone: dto.metrics.timezone }));
+      const [dtos, profile, proposed] = await Promise.all([
+        fetchAllPages((cursor) => api.getTriage({ window, cursor })),
+        api.getDefaultTargetProfile(),
+        fetchAllPages((cursor) => api.listRecommendations({ status: 'PROPOSED', cursor })),
+      ]);
+      const { thresholds } = profileAdapter.adapt(profile);
+      const pending = new Map<string, number>();
+      for (const recommendation of proposed) {
+        pending.set(recommendation.patient_id, (pending.get(recommendation.patient_id) ?? 0) + 1);
+      }
+      // The triage list carries no time zone; the doctor's device zone formats the times.
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return dtos.map((dto) => ({
+        ...triageAdapter.adapt(dto, { thresholds, pendingRecommendationsCount: pending.get(dto.patient_id) ?? 0 }),
+        timezone,
+      }));
     },
   });
 }
@@ -82,6 +98,16 @@ export function useAlertList(filters: AlertListFilters) {
       );
       return dtos.map((dto) => alertAdapter.adapt(dto));
     },
+  });
+}
+
+/** The doctor marks a patient as reviewed; the queue refreshes so the row says so. */
+export function useMarkReviewed(window: MetricsWindow) {
+  const { api } = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (patientId: string) => api.markPatientReviewed(patientId, window),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: triageKey }),
   });
 }
 

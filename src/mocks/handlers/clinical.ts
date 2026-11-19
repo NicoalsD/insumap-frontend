@@ -5,11 +5,13 @@ import { WINDOWS, type MetricsWindow } from '@/services/dto/common';
 import { apiUrl } from '@/services/http/apiUrl';
 import { HTTP_STATUS } from '@/services/http/httpStatus';
 import { DEMO_CLINIC } from '../fixtures/people';
+import { TARGET_PROFILES } from '../fixtures/profiles';
 import { patientId } from '../fixtures/world';
 import { apiError, paginate, readBody, validationError } from '../http';
 import type { AgpResolution } from '../fixtures/world';
 import type { MockState } from '../MockState';
 import { guard } from './guard';
+import { wireAgp, wireMetrics, wireOverview, wireTriageRow } from '../wire';
 
 const DEFAULT_WINDOW: MetricsWindow = '14d';
 const FALLBACK_PAGE_DEFAULT = 20;
@@ -53,6 +55,28 @@ export function clinicalHandlers(state: MockState) {
       return 'response' in result ? result.response : HttpResponse.json(DEMO_CLINIC);
     }),
 
+    http.post(apiUrl('/dashboard/patients/:patient_id/review'), ({ request, params }) => {
+      const result = guard(state, request, PERMISSIONS.triageRead);
+      if ('response' in result) return result.response;
+      const id = String(params['patient_id']);
+      if (!state.world.isAssigned(id)) return apiError('NOT_FOUND');
+      return HttpResponse.json({ patient_id: id, reviewed_at: new Date().toISOString() });
+    }),
+
+    http.get(apiUrl('/target-profiles'), ({ request }) => {
+      const result = guard(state, request, PERMISSIONS.triageRead);
+      if ('response' in result) return result.response;
+      const items = TARGET_PROFILES.map((profile, index) => ({ ...profile, status: 'ACTIVE', is_default: index === 0 }));
+      return HttpResponse.json({ items, next_cursor: null });
+    }),
+
+    http.get(apiUrl('/target-profiles/:profile_id'), ({ request, params }) => {
+      const result = guard(state, request, PERMISSIONS.triageRead);
+      if ('response' in result) return result.response;
+      const profile = TARGET_PROFILES.find((item) => item.id === String(params['profile_id']));
+      return profile ? HttpResponse.json(profile) : apiError('NOT_FOUND');
+    }),
+
     http.get(apiUrl('/dashboard/triage'), ({ request }) => {
       const result = guard(state, request, PERMISSIONS.triageRead);
       if ('response' in result) return result.response;
@@ -63,7 +87,7 @@ export function clinicalHandlers(state: MockState) {
       const rows = state.world
         .triage(window)
         .filter((row) => reviewed === null || (row.reviewed_at !== null) === (reviewed === 'true'));
-      return HttpResponse.json(page(rows, url));
+      return HttpResponse.json(page(rows.map(wireTriageRow), url));
     }),
 
     // `me` routes are declared before `:patient_id` so "me" is never read as an id (API.md 8.4).
@@ -75,7 +99,7 @@ export function clinicalHandlers(state: MockState) {
       const overview = state.world.overview(result.account.id, window);
       if (!overview) return apiError('NOT_FOUND');
       // The patient never receives AI output: the schema of the own overview drops it.
-      return HttpResponse.json(ownOverviewSchema.parse(overview));
+      return HttpResponse.json(wireOverview(ownOverviewSchema.parse(overview), overview.timezone));
     }),
 
     http.get(apiUrl('/patients/own/metrics'), ({ request }) => {
@@ -84,7 +108,7 @@ export function clinicalHandlers(state: MockState) {
       const window = windowOf(new URL(request.url));
       if (!window) return validationError([{ field: 'query.window', type: 'enum' }]);
       const metrics = state.world.metrics(result.account.id, window);
-      return metrics ? HttpResponse.json(metrics) : apiError('NOT_FOUND');
+      return metrics ? HttpResponse.json(wireMetrics(metrics)) : apiError('NOT_FOUND');
     }),
 
     http.post(apiUrl('/readings'), async ({ request }) => {
@@ -146,7 +170,7 @@ export function clinicalHandlers(state: MockState) {
       const window = windowOf(new URL(request.url));
       if (!window) return validationError([{ field: 'query.window', type: 'enum' }]);
       const overview = state.world.overview(String(params['patient_id']), window);
-      return overview ? HttpResponse.json(overview) : apiError('NOT_FOUND');
+      return overview ? HttpResponse.json(wireOverview(overview, overview.timezone)) : apiError('NOT_FOUND');
     }),
 
     http.get(apiUrl('/patients/:patient_id/metrics'), ({ request, params }) => {
@@ -155,7 +179,7 @@ export function clinicalHandlers(state: MockState) {
       const window = windowOf(new URL(request.url));
       if (!window) return validationError([{ field: 'query.window', type: 'enum' }]);
       const metrics = state.world.metrics(String(params['patient_id']), window);
-      return metrics ? HttpResponse.json(metrics) : apiError('NOT_FOUND');
+      return metrics ? HttpResponse.json(wireMetrics(metrics)) : apiError('NOT_FOUND');
     }),
 
     http.get(apiUrl('/patients/:patient_id/metrics/agp'), ({ request, params }) => {
@@ -165,7 +189,7 @@ export function clinicalHandlers(state: MockState) {
       const resolution = AGP_RESOLUTIONS.find((value) => value === raw);
       if (!resolution) return validationError([{ field: 'query.resolution', type: 'enum' }]);
       const agp = state.world.agp(String(params['patient_id']), resolution);
-      return agp ? HttpResponse.json(agp) : apiError('NOT_FOUND');
+      return agp ? HttpResponse.json(wireAgp(agp)) : apiError('NOT_FOUND');
     }),
 
     http.get(apiUrl('/patients/:patient_id/readings'), ({ request, params }) => {

@@ -144,12 +144,19 @@ describe('mock doctor endpoints (API.md 8.8 to 8.11)', () => {
     await signInStaff(DOCTOR_ACCOUNT);
   });
 
-  it('serves a triage ordered by risk with the target profile inside every row', async () => {
+  it('serves a triage ordered by risk with the share in range of every row', async () => {
     const page = await api.getTriage({ window: '14d' });
     expect(page.items[0]?.risk_tier).toBe('CRITICAL');
-    expect(page.items.every((row) => row.metrics.target_profile.range_low_mg_dl > 0)).toBe(true);
+    expect(page.items.every((row) => row.tir_pct === null || row.tir_pct >= 0)).toBe(true);
+    expect((await api.getDefaultTargetProfile()).range_low_mg_dl).toBeGreaterThan(0);
     const scores = page.items.map((row) => row.risk_score);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
+  });
+
+  it('marks an assigned patient as reviewed and answers 404 for another', async () => {
+    const reviewed = await api.markPatientReviewed(patientId(1), '14d');
+    expect(reviewed.patient_id).toBe(patientId(1));
+    expect(await codeOf(api.markPatientReviewed(patientId(999), '14d'))).toBe('NOT_FOUND');
   });
 
   it('paginates with an opaque cursor', async () => {
@@ -167,8 +174,8 @@ describe('mock doctor endpoints (API.md 8.8 to 8.11)', () => {
   it('serves overview, metrics, AGP and readings of an assigned patient', async () => {
     const id = patientId(1);
     const overview = await api.getPatientOverview(id, '14d');
-    expect(overview.pending_recommendations.length).toBe(1);
-    expect(overview.data_source).toBeUndefined();
+    expect(overview.timezone).toBe('America/Bogota');
+    expect(overview.target_profile.range_low_mg_dl).toBeGreaterThan(0);
     const metrics = await api.getPatientMetrics(id, '7d');
     expect(metrics.window).toBe('7d');
     const agp = await api.getPatientAgp(id);
@@ -222,8 +229,8 @@ describe('mock patient endpoints', () => {
   it('serves the own overview without recommendations or forecast', async () => {
     const overview = await api.getOwnOverview('14d');
     expect(overview.patient.id).toBe(PATIENT_ACCOUNT.id);
-    expect('pending_recommendations' in overview).toBe(false);
-    expect('latest_forecast' in overview).toBe(false);
+    expect(overview.pending_recommendations).toEqual([]);
+    expect(overview.latest_forecast).toBeNull();
     expect((await api.getOwnMetrics('14d')).target_profile.code).toBe('ADULT_STANDARD');
     expect((await api.listOwnReadings()).items.length).toBeGreaterThan(0);
   });
@@ -390,7 +397,7 @@ describe('mock patient record (API.md 8.6, 8.7, 8.12)', () => {
 
   it('serves the active plan with prescribed doses only and no AI recommendation', async () => {
     const plan = await api.getOwnTreatmentPlan();
-    expect(plan.name).toBe('Plan basal-bolo');
+    expect(plan.version).toBeGreaterThan(0);
     expect(plan.schedule.some((item) => item.dose_units === null)).toBe(true);
     expect(plan.schedule.find((item) => item.label === 'Insulina basal')?.dose_units).toBe(18);
     const token = tokens.get() ?? '';
@@ -625,7 +632,6 @@ describe('mock injection sites and insulin doses (BRIEF-injection)', () => {
     const overview = await api.getOwnOverview('14d');
     expect(overview.patient).toMatchObject({
       sex: 'FEMALE',
-      birth_date: '1992-03-18',
       bmi: 23.4,
       pregnancy_status: 'NONE',
     });
@@ -650,21 +656,20 @@ describe('mock injection sites and insulin doses (BRIEF-injection)', () => {
 describe('mock overview carries the insulin schedule of the active plan (BRIEF-injection)', () => {
   it('gives the own overview the insulin items only, with dose, kind and sites', async () => {
     await api.login(PATIENT_ACCOUNT.email, PATIENT_ACCOUNT.password);
-    const overview = await api.getOwnOverview('14d');
-    const schedule = overview.active_plan?.schedule ?? [];
+    const plan = await api.getOwnTreatmentPlan();
+    const schedule = plan.schedule.filter((item) => item.insulin_kind !== null);
     expect(schedule.map((item) => item.insulin_kind)).toEqual(['BOLUS', 'BOLUS', 'BOLUS', 'BASAL']);
     expect(schedule.find((item) => item.insulin_kind === 'BASAL')).toMatchObject({
       dose_units: 18,
       injection_sites: ['ABDOMEN_RIGHT', 'ABDOMEN_LEFT', 'THIGH_RIGHT', 'THIGH_LEFT'],
     });
-    const plan = await api.getOwnTreatmentPlan();
-    expect(schedule).toEqual(plan.schedule.filter((item) => item.insulin_kind !== null));
   });
 
   it('gives the doctor the insulin items of an assigned patient plan', async () => {
     await signInStaff(DOCTOR_ACCOUNT);
     const camila = await api.getPatientOverview(patientId(1), '14d');
-    expect(camila.active_plan?.schedule.map((item) => item.insulin_kind)).toEqual([
+    const plan = await api.getTreatmentPlan(camila.active_plan?.id ?? '');
+    expect(plan.schedule.filter((item) => item.insulin_kind !== null).map((item) => item.insulin_kind)).toEqual([
       'BOLUS',
       'BOLUS',
       'BOLUS',
@@ -698,9 +703,9 @@ describe('mock doctor view of injection data (BRIEF-injection)', () => {
     const camila = await api.getPatientOverview(patientId(1), '14d');
     expect(camila.patient).toEqual({
       id: patientId(1),
-      full_name: 'Camila Restrepo Ossa',
+      full_name: '',
       sex: 'FEMALE',
-      birth_date: '1979-07-02',
+      birth_date: null,
       bmi: 26.1,
       pregnancy_status: 'NONE',
     });

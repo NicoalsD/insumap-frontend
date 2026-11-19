@@ -34,6 +34,7 @@ import {
   usePatientOverview,
   usePatientReadings,
   usePatientRecommendations,
+  usePatientPlan,
   usePatientRiskTier,
 } from './detail/queries';
 import type { RiskTier } from './detail/types';
@@ -77,8 +78,9 @@ export function PatientDetailPage() {
   const overview = usePatientOverview(patientId, window);
   const metrics = usePatientMetrics(patientId, window);
   const agp = usePatientAgp(patientId);
-  const readings = usePatientReadings(patientId);
+  const readings = usePatientReadings(patientId, windowToDays(window) ?? 0);
   const risk = usePatientRiskTier(patientId, window);
+  const plan = usePatientPlan(overview.data?.active_plan?.id ?? null);
   const recommendations = usePatientRecommendations(patientId);
   const alerts = usePatientAlerts(patientId);
   const notes = usePatientNotes(patientId);
@@ -161,7 +163,7 @@ export function PatientDetailPage() {
   const recommendationDtos = recommendations.data ?? [];
   const openAlertDtos = (alerts.data ?? []).filter((alert) => alert.status !== 'RESOLVED');
   const pendingSuggestions = recommendationDtos.filter((item) => item.status === 'PROPOSED').length;
-  const riskTier: RiskTier | null = risk.data ?? null;
+  const riskTier: RiskTier | null = risk.data?.riskTier ?? null;
   const agpInput = agp.data
     ? {
         bins: agp.data.bins,
@@ -173,7 +175,7 @@ export function PatientDetailPage() {
   return (
     <div className="page patient-detail">
       <PatientHeader
-        fullName={dto.patient.full_name}
+        fullName={risk.data?.fullName ?? dto.patient.full_name}
         profileLabel={profile.label}
         source={latest?.source ?? null}
         lastReading={latest}
@@ -224,7 +226,7 @@ export function PatientDetailPage() {
             canResolve={canResolve}
             timeZone={timeZone}
           />
-          <PlanPanel plan={dto.active_plan} />
+          <PlanPanel plan={plan.data ?? dto.active_plan} />
           {insulinDoses.isError ? (
             <section className="panel" aria-labelledby="injection-error-title">
               <header className="panel__header">

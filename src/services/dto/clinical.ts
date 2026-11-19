@@ -175,8 +175,8 @@ export const triageRowSchema = z.object({
   risk_score: z.number(),
   flags: z.array(z.object({ code: z.string(), reason: z.string() })),
   open_alerts_count: z.number().int(),
-  pending_recommendations_count: z.number().int(),
-  metrics: metricsResponseSchema,
+  /** Share of the window in range; null when the data is not enough. */
+  tir_pct: z.number().nullable(),
   last_reading: z.object({ value_mg_dl: z.number(), measured_at: instant }).nullable(),
   reviewed_at: instant.nullable(),
   is_fallback: z.boolean().default(false),
@@ -209,8 +209,8 @@ const forecastSchema = z.object({
 export const patientOverviewSchema = z.object({
   patient: z.object({ id: uuid, full_name: z.string() }).extend(injectionPatientFieldsSchema.shape),
   target_profile: targetProfileSchema,
+  timezone: z.string(),
   latest_readings: z.array(glucoseReadingSchema),
-  metrics: metricsResponseSchema,
   active_plan: activePlanSchema.nullable(),
   open_alerts: z.array(alertSchema),
   pending_recommendations: z.array(recommendationSchema),

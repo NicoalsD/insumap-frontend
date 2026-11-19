@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '@/state/useApi';
 import type { MetricsWindow } from '@/services/dto/common';
-import { MAX_PAGES, READINGS_LIMIT } from './constants';
+import { DAY_MS, MAX_PAGES, READINGS_PAGE } from './constants';
 
 /** Keys of every query of one patient. Mutations invalidate this prefix, so the screen stays true. */
 export const patientKey = (patientId: string) => ['detail', patientId] as const;
@@ -36,6 +36,16 @@ export function usePatientOverview(patientId: string, window: MetricsWindow) {
   });
 }
 
+/** The active plan with its items; the overview only names it. */
+export function usePatientPlan(planId: string | null) {
+  const { api } = useApi();
+  return useQuery({
+    queryKey: ['detail', 'plan', planId],
+    enabled: planId !== null,
+    queryFn: () => api.getTreatmentPlan(planId ?? ''),
+  });
+}
+
 /** Window metrics with the previous window, for the deltas. */
 export function usePatientMetrics(patientId: string, window: MetricsWindow) {
   const { api } = useApi();
@@ -55,27 +65,31 @@ export function usePatientAgp(patientId: string) {
   });
 }
 
-/** Readings of the sensor and the fingersticks, up to one page. The window is applied on the client. */
-export function usePatientReadings(patientId: string) {
+/** Readings of the sensor and the fingersticks of the window; the window is then applied on the client. */
+export function usePatientReadings(patientId: string, windowDays: number) {
   const { api } = useApi();
   return useQuery({
-    queryKey: [...patientKey(patientId), 'readings'],
+    // Outside `patientKey`: a note or an alert action must not re-read every page of the window.
+    queryKey: ['detail-readings', patientId, windowDays],
     queryFn: async () => {
-      const page = await api.listPatientReadings(patientId, { limit: READINGS_LIMIT });
-      return [...page.items];
+      // The API caps a page at `page_size_max`: read the window page by page, newest first.
+      const from = new Date(Date.now() - windowDays * DAY_MS).toISOString();
+      return fetchAllPages((cursor) => api.listPatientReadings(patientId, { limit: READINGS_PAGE, from, cursor }));
     },
     placeholderData: keepPreviousData,
   });
 }
 
 /** Risk tier of the patient, read from the triage list (the overview does not carry it). */
+/** Risk tier and name of the patient from the triage list (the overview carries no name). */
 export function usePatientRiskTier(patientId: string, window: MetricsWindow) {
   const { api } = useApi();
   return useQuery({
     queryKey: [...patientKey(patientId), 'risk', window],
     queryFn: async () => {
       const rows = await fetchAllPages((cursor) => api.getTriage({ window, cursor }));
-      return rows.find((row) => row.patient_id === patientId)?.risk_tier ?? null;
+      const row = rows.find((item) => item.patient_id === patientId);
+      return row ? { riskTier: row.risk_tier, fullName: row.full_name } : null;
     },
     placeholderData: keepPreviousData,
   });

@@ -12,7 +12,7 @@ export function MessagesPage() {
   return (
     <div className="patient-page">
       <PageHeader title={es.patient.messages.title} description={es.patient.messages.description} />
-      <MessageThread limits={limits.data ?? {}} timeZone={overview.data?.metrics.timezone ?? 'UTC'} />
+      <MessageThread limits={limits.data ?? {}} timeZone={overview.data?.timezone ?? 'UTC'} />
     </div>
   );
 }

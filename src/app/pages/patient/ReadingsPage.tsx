@@ -44,7 +44,7 @@ export function ReadingsPage() {
         <PendingNotice />
         <GlucoseRecorder thresholds={profile.thresholds} limits={limits.data ?? {}} />
       </div>
-      <ReadingsList thresholds={profile.thresholds} timeZone={overview.data.metrics.timezone} now={now} />
+      <ReadingsList thresholds={profile.thresholds} timeZone={overview.data.timezone} now={now} />
     </div>
   );
 }

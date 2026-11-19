@@ -1,4 +1,5 @@
 import { Check, Circle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useRef, useState, type SubmitEvent } from 'react';
 import { homePathFor } from '@/app/navigation';
 import { es } from '@/i18n/es';
@@ -38,6 +39,10 @@ const RESTART_CODES = new Set(['INVITATION_INVALID', 'CONSENT_VERSION_OUTDATED']
  */
 export function ActivationDetailsStep({ verified, onRestart, onDone }: ActivationDetailsStepProps) {
   const { api } = useApi();
+  const notice = useQuery({
+    queryKey: ['privacy-notice', verified.privacyNoticeVersionId],
+    queryFn: () => api.getPrivacyNotice(verified.privacyNoticeVersionId),
+  });
   const { reload } = useSession();
   const { schemas } = useFormSchemas();
   const { data: limits } = useFieldLimits();
@@ -206,6 +211,13 @@ export function ActivationDetailsStep({ verified, onRestart, onDone }: Activatio
         <p id="activation-consent-title" className="access__subtitle">
           {es.access.activation.consentTitle}
         </p>
+        {notice.isError ? <p className="access__alert" role="alert">{es.access.activation.privacyNoticeFailed}</p> : null}
+        {notice.data ? (
+          <div className="access__notice" role="region" aria-label={format(es.access.activation.privacyNoticeTitle, { version: notice.data.version })} tabIndex={0}>
+            <p className="access__subtitle">{format(es.access.activation.privacyNoticeTitle, { version: notice.data.version })}</p>
+            <p>{notice.data.text}</p>
+          </div>
+        ) : null}
         <label className="access__check">
           <input
             ref={privacyRef}

@@ -6,12 +6,14 @@ import { format } from '@/i18n/format';
 import { MetricsViewModelAdapter, type MetricsViewModel } from '@/services/adapters/MetricsViewModelAdapter';
 import type { MetricsWindow } from '@/services/dto/common';
 import { Badge } from '@/ui/Badge';
+import { Button } from '@/ui/Button';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { RangeBand } from '@/ui/glucose/RangeBand';
 import { RangeRuler } from '@/ui/glucose/RangeRuler';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { useApi } from '@/state/useApi';
 import { AgpBand } from './AgpBand';
+import { useMarkReviewed } from './queries';
 import { formatElapsed } from './formatting';
 import { riskBadgeTone, type TriageItem } from './triageModel';
 import './PatientPreview.css';
@@ -33,6 +35,7 @@ export interface PatientPreviewProps {
 export function PatientPreview({ item, window, now }: PatientPreviewProps) {
   const { api } = useApi();
   const patientId = item?.patientId ?? null;
+  const markReviewed = useMarkReviewed(window);
 
   const metricsQuery = useQuery({
     queryKey: ['patients', patientId, 'metrics', window],
@@ -73,16 +76,34 @@ export function PatientPreview({ item, window, now }: PatientPreviewProps) {
             </Badge>
           ) : null}
         </div>
-        <ButtonLink to={`/doctor/patients/${item.patientId}`} variant="secondary" icon={<ArrowRight size="1em" aria-hidden="true" />}>
-          {es.doctor.triage.previewOpenRecord}
-        </ButtonLink>
+        <div className="triage-preview__actions">
+          {item.reviewedAt === null ? (
+            <Button
+              variant="secondary"
+              loading={markReviewed.isPending}
+              onClick={() => {
+                markReviewed.mutate(item.patientId);
+              }}
+            >
+              {es.doctor.triage.markReviewed}
+            </Button>
+          ) : null}
+          <ButtonLink to={`/doctor/patients/${item.patientId}`} variant="secondary" icon={<ArrowRight size="1em" aria-hidden="true" />}>
+            {es.doctor.triage.previewOpenRecord}
+          </ButtonLink>
+        </div>
+        {markReviewed.isError ? (
+          <p role="alert" className="triage-preview__error">
+            {es.doctor.triage.markReviewedFailed}
+          </p>
+        ) : null}
       </header>
 
       <div className="triage-preview__grid">
         <section className="triage-preview__col" aria-label={es.doctor.triage.previewLastReading}>
           {item.lastReading ? (
             <>
-              <RangeRuler valueMgDl={item.lastReading.valueMgDl} thresholds={item.metrics.profile.thresholds} size="compact" showTarget={false} />
+              <RangeRuler valueMgDl={item.lastReading.valueMgDl} thresholds={item.thresholds} size="compact" showTarget={false} />
               <p className="triage-preview__time">
                 {es.doctor.triage.previewLastReading}: {formatElapsed(item.lastReading.measuredAt, now)}
               </p>

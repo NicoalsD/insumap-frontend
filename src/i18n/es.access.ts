@@ -72,6 +72,8 @@ export const accessStrings = {
     consentTitle: 'Consentimiento',
     privacy:
       'Acepto el aviso de privacidad vigente de Insumap y el tratamiento de mis datos de salud para mi seguimiento.',
+    privacyNoticeTitle: 'Aviso de privacidad, versión {version}',
+    privacyNoticeFailed: 'No pudimos cargar el texto del aviso. Inténtalo de nuevo antes de aceptar.',
     privacyHint: 'Sin esta aceptación no es posible activar tu cuenta.',
     privacyRequired: 'Debes aceptar el aviso de privacidad para continuar.',
     ai: 'Acepto que el asistente use un servicio de IA externo para responder mis preguntas.',

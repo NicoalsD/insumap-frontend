@@ -6,6 +6,8 @@ import type { MetricsWindow } from '@/services/dto/common';
 
 /** Safety bound on cursor loops: the API pages at most `page_size_max` rows. */
 const MAX_PAGES = 100;
+const HOUR_MS = 3_600_000;
+const DAY_HOURS = 24;
 
 export const patientKeys = {
   all: ['patient'] as const,
@@ -67,12 +69,16 @@ export async function readAllOwnReadings(
   return items;
 }
 
-/** Every own reading (all pages), used by the day chart. */
-export function useAllOwnReadings() {
+/** Own readings of the last `hours` hours (all pages), used by the day chart. */
+export function useRecentOwnReadings(hours = DAY_HOURS) {
   const { api } = useApi();
   return useQuery({
-    queryKey: [...patientKeys.all, 'readings-all'],
-    queryFn: () => readAllOwnReadings((cursor) => api.listOwnReadings({ cursor })),
+    queryKey: [...patientKeys.all, 'readings-recent', hours],
+    queryFn: () => {
+      // Rounded to the hour; the window is computed when the request goes out, not while rendering.
+      const from = new Date(Math.floor(Date.now() / HOUR_MS) * HOUR_MS - hours * HOUR_MS).toISOString();
+      return readAllOwnReadings((cursor) => api.listOwnReadings({ from, cursor }));
+    },
   });
 }
 

@@ -11,7 +11,7 @@ import './PatientPages.css';
 export function PlanPage() {
   const plan = useOwnPlan();
   const overview = useOwnOverview('14d');
-  const timeZone = overview.data?.metrics.timezone ?? 'UTC';
+  const timeZone = overview.data?.timezone ?? 'UTC';
 
   if (plan.isError && plan.error instanceof ApiError && plan.error.code === 'NOT_FOUND') {
     return (
@@ -42,8 +42,10 @@ export function PlanPage() {
       {(
 
         <section className="patient-page__section" aria-labelledby="plan-name">
-          <h2 id="plan-name" className="patient-layer__title">{data.name}</h2>
-          <p className="plan-meta">{format(es.patient.plan.version, { version: data.version })}</p>
+          <h2 id="plan-name" className="patient-layer__title">
+            {data.name === '' ? format(es.patient.plan.version, { version: data.version }) : data.name}
+          </h2>
+          {data.name === '' ? null : <p className="plan-meta">{format(es.patient.plan.version, { version: data.version })}</p>}
           {data.updated_at ? (
             <p className="plan-meta">
               {format(es.patient.plan.updated, { date: longDate(new Date(data.updated_at), timeZone) })}
