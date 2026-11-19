@@ -1,7 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { es } from '@/i18n/es';
-import { PublicLayout, RootLayout } from './layouts';
+import { LandingLayout, PublicLayout, RootLayout } from './layouts';
 import { NAV_ITEMS } from './navigation';
 import { LandingPage } from './pages/LandingPage';
 import { LazySystemDesignPage } from './pages/LazySystemDesignPage';
@@ -22,9 +22,12 @@ export const appRoutes: RouteObject[] = [
     element: <RootLayout />,
     children: [
       {
+        element: <LandingLayout />,
+        children: [{ index: true, element: <LandingPage /> }],
+      },
+      {
         element: <PublicLayout />,
         children: [
-          { index: true, element: <LandingPage /> },
           { path: 'login', element: <LoginPage /> },
           {
             path: 'dev/system',
