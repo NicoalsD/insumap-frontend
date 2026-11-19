@@ -1,0 +1,127 @@
+.glucose-recorder {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.glucose-recorder__open {
+  inline-size: 100%;
+}
+
+.glucose-recorder__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.glucose-recorder__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-snug);
+}
+
+.glucose-recorder__title:focus {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.glucose-recorder__step {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.glucose-recorder__form,
+.glucose-recorder__field {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.glucose-recorder__label {
+  font-weight: var(--font-weight-semibold);
+  padding: 0;
+}
+
+.glucose-recorder__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.glucose-recorder__input {
+  min-block-size: var(--control-height-lg);
+  padding-inline: var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-xl);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  max-inline-size: 16rem;
+}
+
+.glucose-recorder__input:focus-visible,
+.glucose-recorder__choice input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.glucose-recorder__input[aria-invalid='true'] {
+  border-color: var(--color-critical);
+}
+
+.glucose-recorder__choices {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.glucose-recorder__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--control-height-lg);
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.glucose-recorder__choice input {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  accent-color: var(--color-primary);
+}
+
+.glucose-recorder__error {
+  color: var(--color-critical-subtle-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.glucose-recorder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.glucose-recorder__result {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.glucose-recorder__result[data-kind='pending'] {
+  color: var(--color-warning);
+}
+
+.glucose-recorder__urgent {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-critical-subtle);
+  color: var(--color-critical-subtle-text);
+  border-radius: var(--radius-md);
+}

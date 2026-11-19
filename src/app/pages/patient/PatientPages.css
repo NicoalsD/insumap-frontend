@@ -1,0 +1,251 @@
+/* One centered column: 40rem on desktop, full width from 360 px. */
+.patient-page {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding-block-end: var(--space-8);
+}
+
+.patient-page__head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.patient-page__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-tight);
+}
+
+.patient-page__lead {
+  color: var(--color-text-muted);
+}
+
+.patient-page__banner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.patient-page__record {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.patient-page__more {
+  display: flex;
+  justify-content: center;
+}
+
+.patient-page__filters {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  align-items: end;
+}
+
+.patient-page__filters label {
+  display: grid;
+  gap: var(--space-1);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+.patient-page__filters input {
+  min-block-size: var(--control-height-lg);
+  padding-inline: var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.patient-page__filters input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.patient-page__filters .patient-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.patient-list {
+  display: grid;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.patient-list__day h2 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  margin-block-end: var(--space-2);
+}
+
+.patient-list__items {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.patient-list__item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.patient-list__value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.patient-list__meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.patient-list__state {
+  font-weight: var(--font-weight-semibold);
+}
+
+.patient-list__state[data-state='IN_RANGE'] {
+  color: var(--color-range-in-range-text);
+}
+
+.patient-list__state[data-state='LOW'],
+.patient-list__state[data-state='VERY_LOW'] {
+  color: var(--color-range-low-text);
+}
+
+.patient-list__state[data-state='HIGH'],
+.patient-list__state[data-state='VERY_HIGH'] {
+  color: var(--color-range-high-text);
+}
+
+.plan-schedule {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.plan-schedule__item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.plan-schedule__time {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+}
+
+.plan-schedule__dose,
+.plan-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.thread {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.thread__bubble {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 85%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.thread__bubble[data-sender='PATIENT'] {
+  justify-self: end;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary-subtle-text);
+}
+
+.thread__bubble[data-sender='DOCTOR'] {
+  justify-self: start;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.thread__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.emergency-notice {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.compose {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.compose textarea {
+  min-block-size: 7rem;
+  padding: var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  resize: vertical;
+}
+
+.compose textarea:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.compose__counter {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.compose__error {
+  color: var(--color-critical-subtle-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.patient-page__section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.patient-layer__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+}
