@@ -101,5 +101,4 @@ export const FIELD_LIMITS: Readonly<Record<string, number>> = {
   reason_min_length: 10,
   reason_max_length: 500,
   note_max_length: 500,
-  mfa_code_length: 6,
 };
