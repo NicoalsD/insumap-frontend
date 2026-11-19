@@ -11,11 +11,11 @@
   color-scheme: light dark;
 
   /* ---- Neutrals: near-white tinted toward indigo ---- */
-  --color-canvas: #f3f5ff;
+  --color-canvas: #e4e8fc;
   --color-surface: #ffffff;
-  --color-surface-sunken: #e7eafb;
-  --color-surface-hover: #eef1ff;
-  --color-border: #d5daf3;
+  --color-surface-sunken: #eef0fe;
+  --color-surface-hover: #f3f5ff;
+  --color-border: #cfd5f3;
   --color-border-strong: #6e739f;
   --color-text: #15173a;
   --color-text-muted: #464a74;
@@ -164,12 +164,13 @@
   --border-width: 1px;
 
   /* ---- Radii ---- */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.5rem;
   --radius-pill: 999px;
 
   /* ---- Shadows (offset + soft blur, tinted to petrol ink) ---- */
+  --shadow-card: 0 1px 0 0 #fff inset, 0 16px 32px -24px rgb(21 23 58 / 0.4);
   --shadow-sm: 0 1px 2px rgb(21 23 58 / 0.08);
   --shadow-md: 0 2px 6px rgb(21 23 58 / 0.1), 0 1px 2px rgb(21 23 58 / 0.06);
   --shadow-lg: 0 10px 28px rgb(21 23 58 / 0.16), 0 2px 6px rgb(21 23 58 / 0.08);
@@ -279,6 +280,7 @@
     --color-range-very-high-text: #f7b48a;
     --color-range-very-high-subtle: #3a2012;
 
+    --shadow-card: 0 16px 32px -24px rgb(0 0 0 / 0.6);
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 2px 6px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.3);
     --shadow-lg: 0 10px 28px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
