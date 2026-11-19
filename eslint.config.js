@@ -88,6 +88,12 @@ export default defineConfig(
     rules: { '@typescript-eslint/no-magic-numbers': 'off' },
   },
   {
+    // Landing art direction: 3D geometry, light, motion timing and the illustrative numbers of the
+    // simulated chips. No clinical logic lives here (thresholds still come from the API).
+    files: ['src/app/pages/landing/art/**'],
+    rules: { '@typescript-eslint/no-magic-numbers': 'off' },
+  },
+  {
     files: ['*.js', '*.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
