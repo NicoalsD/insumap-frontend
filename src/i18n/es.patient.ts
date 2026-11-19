@@ -169,7 +169,16 @@ export const patientStrings = {
       'No encontramos un sitio seguro para este tipo de insulina. Contacta a tu equipo de atención antes de inyectarte.',
     mapLabel: 'Sitios de inyección',
     reasonsTitle: 'Por qué este sitio',
-    chooseOther: 'Puedes elegir otro sitio permitido abajo.',
+    chooseOther: 'Elegiste un sitio distinto al sugerido.',
+    backToSuggestion: 'Volver al sugerido',
+    legendTitle: 'Qué significa cada marca',
+    legend: {
+      SUGGESTED: 'Sugerido para hoy',
+      ALLOWED: 'Permitido',
+      RECENT: 'Usado hace poco',
+      AVOID: 'Evitar',
+    },
+    stageLabel: 'Cuerpo con los sitios de inyección',
     siteNames: {
       ABDOMEN_RIGHT: 'abdomen derecho',
       ABDOMEN_LEFT: 'abdomen izquierdo',
