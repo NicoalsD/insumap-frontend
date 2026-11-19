@@ -22,7 +22,8 @@ async function signInAndOpenAlerts() {
   await userEvent.type(screen.getByLabelText(es.access.login.password), DOCTOR_ACCOUNT.password);
   await userEvent.click(screen.getByRole('button', { name: es.access.login.submit }));
   await userEvent.type(await screen.findByLabelText(es.access.mfa.code), DEMO_TOTP_CODE);
-  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ });
+  // The panel greets the doctor once its queue and 3D map are ready; under a loaded run that takes a while.
+  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ }, { timeout: 4000 });
   await view.router.navigate('/doctor/alerts');
   return view;
 }

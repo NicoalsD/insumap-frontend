@@ -2,6 +2,7 @@ import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import { InjectionBodyMap, SITE_CODES, type InjectionSiteEntry, type SiteCode } from '@/ui/body';
 import type { InsulinKind } from '@/services/dto/injection';
+import { useOwnBody } from './useOwnBody';
 
 /**
  * Sites the doctor allowed for one plan item, in text, plus a read-only body map with those sites
@@ -14,6 +15,7 @@ export function PlanSites({
   readonly kind: InsulinKind;
   readonly sites: readonly SiteCode[] | null;
 }) {
+  const body = useOwnBody();
   if (sites === null) {
     return <p className="plan-meta">{es.patient.injection.plan.any}</p>;
   }
@@ -27,6 +29,8 @@ export function PlanSites({
       <p>{format(es.patient.injection.plan.allowed, { sites: names })}</p>
       <p className="plan-meta">{es.patient.injection.plan.readOnly}</p>
       <InjectionBodyMap
+          sex={body.sex}
+          bmi={body.bmi}
         sites={entries}
         selectedSite={null}
         selectedSpot={null}

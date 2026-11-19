@@ -22,6 +22,7 @@ import { WidgetTree } from './triage/WidgetTree';
 import { countSegments, filterRows, sortRows, type TriageItem } from './triage/triageModel';
 import { TRIAGE_WINDOWS, useTriageFilters } from './triage/useTriageFilters';
 import './triage/TriagePage.css';
+import { WindowSlider } from './WindowSlider';
 
 /** Cards shown in the priority carousel: the queue's top rows by risk. */
 const PRIORITY_CARDS = 8;
@@ -119,11 +120,9 @@ export function TriagePage() {
         </header>
         {rowsQuery.isSuccess && rows.length > 0 ? (
           <TriageToolbar
-            window={filters.window}
             search={filters.search}
             segments={filters.segments}
             counts={counts}
-            onWindow={filters.setWindow}
             onSearch={filters.setSearch}
             onToggleSegment={filters.toggleSegment}
             onClear={filters.clearFilters}
@@ -153,20 +152,13 @@ export function TriagePage() {
     <div className="page doctor-dashboard">
       <div className="dashboard-top">
         <p className="dashboard-top__meta">{description}</p>
-        <div className="window-chips" role="group" aria-label={es.doctor.dashboard.windowChips}>
-          {TRIAGE_WINDOWS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={filters.window === option}
-              onClick={() => {
-                filters.setWindow(option);
-              }}
-            >
-              {format(es.doctor.dashboard.windowChip, { days: Number.parseInt(option, 10) })}
-            </button>
-          ))}
-        </div>
+        <WindowSlider
+          className="dashboard-top__window"
+          label={es.doctor.triage.windowLabel}
+          value={filters.window}
+          options={TRIAGE_WINDOWS}
+          onChange={filters.setWindow}
+        />
       </div>
       <div className="grid-12 doctor-dashboard__row">
         <div style={{ '--span': 8, '--span-md': 8 } as React.CSSProperties}>

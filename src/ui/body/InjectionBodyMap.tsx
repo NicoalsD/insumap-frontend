@@ -2,7 +2,10 @@ import { Clock, Pause, Play, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { bodyStrings } from '@/i18n/es.body';
 import { format } from '@/i18n/format';
+import type { PatientSex } from '@/services/dto/injection';
 import { Button } from '@/ui/Button';
+import { ChoiceSlider, Slider } from '@/ui/Slider';
+import { loadBodyAsset, shapeFor } from './bodyAsset';
 import './InjectionBodyMap.css';
 import {
   asSpot,
@@ -15,10 +18,10 @@ import {
 } from './injectionModel';
 import { siteView } from './injectionRays';
 import type { InjectionScene, InjectionScenePlan } from './injectionScene';
+import { ZOOM_MAX, ZOOM_MIN } from './injectionZoom';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 import { canRender3D } from './webglSupport';
 import {
-  BODY_VIEWS,
   SPOT_NUMBERS,
   type BodyView,
   type InjectionState,
@@ -43,6 +46,50 @@ export interface InjectionBodyMapProps {
    * choice are off, `onSelect` is never called, and the pointer keeps its normal shape.
    */
   readonly readOnly?: boolean | undefined;
+  /** The patient's recorded sex and BMI: the body takes their build. Unknown keeps it neutral. */
+  readonly sex?: PatientSex | undefined;
+  readonly bmi?: number | null | undefined;
+}
+
+const HALF_TURN_DEG = 180;
+const FULL_TURN_DEG = 360;
+const QUARTER_TURN_DEG = 90;
+const TURN_STEP_DEG = 5;
+const NAMED_TURN_TOLERANCE_DEG = 10;
+const PERCENT = 100;
+const ZOOM_STEP_PCT = 10;
+const DEG_TO_RAD = Math.PI / HALF_TURN_DEG;
+
+/** The angle that shows a view: the front faces the camera at 0, the back at 180. */
+const VIEW_ANGLE: Record<BodyView, number> = { front: 0, back: HALF_TURN_DEG };
+
+/** An angle in (-180, 180]. */
+function normalizeAngle(degrees: number): number {
+  const turned =
+    ((((degrees + HALF_TURN_DEG) % FULL_TURN_DEG) + FULL_TURN_DEG) % FULL_TURN_DEG) - HALF_TURN_DEG;
+  return turned === -HALF_TURN_DEG ? HALF_TURN_DEG : turned;
+}
+
+/** Front while the face is toward the camera (within a quarter turn), back otherwise. */
+function viewOf(angle: number): BodyView {
+  return Math.abs(normalizeAngle(angle)) <= QUARTER_TURN_DEG ? 'front' : 'back';
+}
+
+/** What the turn shows, in words: a named side near the marks, else the degrees and the side. */
+function turnText(angle: number): string {
+  const named: readonly [number, string][] = [
+    [0, bodyStrings.turnNamed.front],
+    [HALF_TURN_DEG, bodyStrings.turnNamed.back],
+    [-HALF_TURN_DEG, bodyStrings.turnNamed.back],
+    [QUARTER_TURN_DEG, bodyStrings.turnNamed.left],
+    [-QUARTER_TURN_DEG, bodyStrings.turnNamed.right],
+  ];
+  const near = named.find(([at]) => Math.abs(angle - at) <= NAMED_TURN_TOLERANCE_DEG);
+  if (near) return near[1];
+  return format(bodyStrings.turnDegrees, {
+    degrees: Math.abs(Math.round(angle)),
+    side: angle > 0 ? bodyStrings.turnSide.left : bodyStrings.turnSide.right,
+  });
 }
 
 /**
@@ -60,10 +107,20 @@ export function InjectionBodyMap({
   onViewChange,
   label,
   readOnly = false,
+  sex = 'UNKNOWN',
+  bmi = null,
 }: InjectionBodyMapProps) {
   const ids = useId();
-  const [internalView, setInternalView] = useState<BodyView>(defaultView);
-  const view = viewProp ?? internalView;
+  const [angle, setAngle] = useState<number>(() => VIEW_ANGLE[viewProp ?? defaultView]);
+  const [zoomPct, setZoomPct] = useState(ZOOM_MIN * PERCENT);
+  const view = viewOf(angle);
+  const shape = useMemo(() => shapeFor(sex, bmi), [sex, bmi]);
+  // A parent that controls the view turns the body to it when the angle shows the other side.
+  const [lastViewProp, setLastViewProp] = useState(viewProp);
+  if (viewProp !== lastViewProp) {
+    setLastViewProp(viewProp);
+    if (viewProp !== undefined && viewProp !== viewOf(angle)) setAngle(VIEW_ANGLE[viewProp]);
+  }
   const reduced = usePrefersReducedMotion();
   const [playing, setPlaying] = useState(!reduced);
   const [use3D] = useState(canRender3D);
@@ -94,10 +151,15 @@ export function InjectionBodyMap({
   /** A suggested site on the other side: offered as a note while the back is showing. */
   const suggestedOnFront = suggestedEntry !== undefined && siteView(suggestedEntry.site) !== view;
 
+  const onViewChangeRef = useRef(onViewChange);
+  const turnTo = (next: number) => {
+    const normalized = normalizeAngle(next);
+    setAngle(normalized);
+    if (viewOf(normalized) !== viewOf(angle)) onViewChangeRef.current?.(viewOf(normalized));
+  };
   const changeView = (next: BodyView) => {
     if (next === view) return;
-    if (viewProp === undefined) setInternalView(next);
-    onViewChange?.(next);
+    turnTo(VIEW_ANGLE[next]);
   };
 
   const chooseSite = (entry: InjectionSiteEntry) => {
@@ -108,14 +170,29 @@ export function InjectionBodyMap({
 
   const motion = playing && !reduced;
   const plan = useMemo<InjectionScenePlan>(
-    () => ({ view, sites: entries, selectedSite, selectedSpot, playing: motion, labels, readOnly }),
-    [view, entries, selectedSite, selectedSpot, motion, labels, readOnly],
+    () => ({
+      view,
+      azimuth: angle * DEG_TO_RAD,
+      zoom: zoomPct / PERCENT,
+      shape,
+      sites: entries,
+      selectedSite,
+      selectedSpot,
+      playing: motion,
+      labels,
+      readOnly,
+    }),
+    [view, angle, zoomPct, shape, entries, selectedSite, selectedSpot, motion, labels, readOnly],
   );
 
+  // The latest angle, read by the drag callback the scene holds.
+  const angleRef = useRef(angle);
   useEffect(() => {
     onSelectRef.current = onSelect;
     readOnlyRef.current = readOnly;
-  }, [onSelect, readOnly]);
+    onViewChangeRef.current = onViewChange;
+    angleRef.current = angle;
+  }, [onSelect, readOnly, onViewChange, angle]);
 
   useEffect(() => {
     planRef.current = plan;
@@ -128,17 +205,23 @@ export function InjectionBodyMap({
     const labelHost = labelsRef.current;
     if (!canvas || !labelHost) return;
     let cancelled = false;
-    void Promise.all([
-      import('./injectionScene'),
-      import('@/app/pages/landing/art/bodyMesh').then(({ loadBodyMesh }) => loadBodyMesh()),
-    ])
-      .then(([{ createInjectionScene }, mesh]) => {
+    void Promise.all([import('./injectionScene'), loadBodyAsset()])
+      .then(([{ createInjectionScene }, body]) => {
         if (cancelled) return;
         const scene = createInjectionScene({
           canvas,
           labelHost,
           reducedMotion: reduced,
-          mesh,
+          body,
+          onRotate: (azimuth) => {
+            const next = normalizeAngle(azimuth / DEG_TO_RAD);
+            if (viewOf(next) !== viewOf(angleRef.current)) onViewChangeRef.current?.(viewOf(next));
+            angleRef.current = next;
+            setAngle(next);
+          },
+          onZoom: (zoom) => {
+            setZoomPct(Math.round(zoom * PERCENT));
+          },
           onPick: (site, spot) => {
             if (!readOnlyRef.current) onSelectRef.current(site, spot);
           },
@@ -174,37 +257,6 @@ export function InjectionBodyMap({
         <div className="ibm__main">
           {showStage ? (
             <>
-              <div className="ibm__toolbar">
-                <div role="group" aria-label={bodyStrings.viewGroup} className="ibm__views">
-                  {BODY_VIEWS.map((option) => (
-                    <Button
-                      key={option}
-                      type="button"
-                      size="sm"
-                      variant={view === option ? 'primary' : 'secondary'}
-                      aria-pressed={view === option}
-                      onClick={() => {
-                        changeView(option);
-                      }}
-                    >
-                      {bodyStrings.views[option]}
-                    </Button>
-                  ))}
-                </div>
-                {reduced ? null : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    icon={playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-                    onClick={() => {
-                      setPlaying((current) => !current);
-                    }}
-                  >
-                    {playing ? bodyStrings.pause : bodyStrings.play}
-                  </Button>
-                )}
-              </div>
               {suggestedOnFront && view === 'back' ? (
                 <div className="ibm__note" role="note">
                   <p>{bodyStrings.suggestedOnFront}</p>
@@ -260,6 +312,57 @@ export function InjectionBodyMap({
                   })}
                 </div>
               </div>
+              <div className="ibm__controls">
+                <Slider
+                  className="ibm__turn"
+                  label={bodyStrings.turn}
+                  value={Math.round(angle)}
+                  min={-HALF_TURN_DEG}
+                  max={HALF_TURN_DEG}
+                  step={TURN_STEP_DEG}
+                  origin={0}
+                  valueText={turnText}
+                  describedBy={`${ids}-drag-hint`}
+                  marks={[
+                    { value: -HALF_TURN_DEG, label: bodyStrings.turnMarks.back },
+                    { value: -QUARTER_TURN_DEG, label: bodyStrings.turnMarks.right },
+                    { value: 0, label: bodyStrings.turnMarks.front },
+                    { value: QUARTER_TURN_DEG, label: bodyStrings.turnMarks.left },
+                    { value: HALF_TURN_DEG, label: bodyStrings.turnMarks.back },
+                  ]}
+                  onChange={turnTo}
+                />
+                <Slider
+                  className="ibm__zoom"
+                  label={bodyStrings.zoom}
+                  value={zoomPct}
+                  min={ZOOM_MIN * PERCENT}
+                  max={ZOOM_MAX * PERCENT}
+                  step={ZOOM_STEP_PCT}
+                  valueText={(value) => format(bodyStrings.zoomValue, { value })}
+                  marks={[
+                    { value: ZOOM_MIN * PERCENT, label: bodyStrings.zoomMarks.far },
+                    { value: ZOOM_MAX * PERCENT, label: bodyStrings.zoomMarks.near },
+                  ]}
+                  onChange={setZoomPct}
+                />
+                {reduced ? null : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    icon={playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+                    onClick={() => {
+                      setPlaying((current) => !current);
+                    }}
+                  >
+                    {playing ? bodyStrings.pause : bodyStrings.play}
+                  </Button>
+                )}
+              </div>
+              <p id={`${ids}-drag-hint`} className="ibm__hint ibm__drag-hint">
+                {bodyStrings.dragHint}
+              </p>
             </>
           ) : (
             <p className="ibm__notice">{bodyStrings.unavailable}</p>
@@ -319,24 +422,27 @@ export function InjectionBodyMap({
               <p id={`${ids}-spot-legend`} className="ibm__legend">
                 {bodyStrings.spotGroup}
               </p>
-              <div className="ibm__spot-row">
-                {SPOT_NUMBERS.map((spot) => (
-                  <Button
-                    key={spot}
-                    type="button"
-                    size="md"
-                    variant={selectedSpot === spot ? 'primary' : 'secondary'}
-                    className="ibm__spot"
-                    aria-pressed={selectedSpot === spot}
-                    disabled={selectedSite === null}
-                    onClick={() => {
-                      if (selectedSite) onSelect(selectedSite, spot);
-                    }}
-                  >
-                    {format(bodyStrings.spotOption, { spot })}
-                  </Button>
-                ))}
-              </div>
+              <ChoiceSlider
+                className="ibm__spot-slider"
+                label={bodyStrings.spotGroup}
+                hideLabel
+                size="lg"
+                value={asSpot(selectedSpot) ?? 1}
+                highlight={selectedEntry ? defaultSpotFor(selectedEntry) : undefined}
+                disabled={selectedSite === null}
+                describedBy={spotHintId}
+                options={SPOT_NUMBERS.map((spot) => ({
+                  value: spot,
+                  label: format(bodyStrings.spotOption, { spot }),
+                  text:
+                    selectedEntry && defaultSpotFor(selectedEntry) === spot
+                      ? format(bodyStrings.spotSuggested, { spot })
+                      : format(bodyStrings.spotOption, { spot }),
+                }))}
+                onChange={(spot) => {
+                  if (selectedSite) onSelect(selectedSite, spot);
+                }}
+              />
               <p id={spotHintId} className="ibm__hint">
                 {selectedSite === null
                   ? bodyStrings.spotNeedsSite

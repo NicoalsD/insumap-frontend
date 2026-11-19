@@ -1,0 +1,250 @@
+/*
+ * Slider: a cobalt track on lilac, a white thumb ringed in cobalt, labelled stops underneath. The
+ * motion lives in CSS variables written by springs (--pos, --bubble, --sx, --sy, --tilt), so the
+ * thumb, the fill and the bubble move together without React renders.
+ */
+.ui-slider {
+  --origin: 0;
+  --knob: 1.5rem;
+  --track-height: 0.5rem;
+  --rail-height: 2.75rem;
+  --pos: 0;
+  --bubble: 0;
+  --sx: 1;
+  --sy: 1;
+  --tilt: 0;
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  user-select: none;
+}
+
+.ui-slider[data-size='lg'] {
+  --knob: 2rem;
+  --track-height: 0.75rem;
+  --rail-height: 3rem;
+}
+
+.ui-slider__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.ui-slider__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.ui-slider[data-size='lg'] .ui-slider__label {
+  font-size: var(--font-size-md);
+}
+
+.ui-slider__value {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: var(--color-primary-subtle-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The whole rail is the target (Fitts's law): 44 px tall, 48 px for the patient. The space above
+   it is the bubble's, so the value never covers the label. */
+.ui-slider__rail {
+  position: relative;
+  margin-block-start: 1.375rem;
+  block-size: var(--rail-height);
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.ui-slider[data-disabled] .ui-slider__rail {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-slider__track {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  block-size: var(--track-height);
+  translate: 0 -50%;
+  border-radius: var(--radius-pill);
+  background: var(--track, var(--color-primary-subtle));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 12%, transparent);
+  overflow: hidden;
+}
+
+/* From the origin to the thumb: the start for a plain slider, the centre for a two-sided one. */
+.ui-slider__fill {
+  --at: clamp(0, var(--pos), 1);
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(min(var(--origin, 0), var(--at)) * (100% - var(--knob)));
+  inline-size: calc(
+    max(var(--at) - var(--origin, 0), var(--origin, 0) - var(--at)) * (100% - var(--knob)) + var(--knob) / 2
+  );
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+
+/* A custom track (glucose bands) carries its own meaning: no cobalt fill over it. */
+.ui-slider[data-custom-track] .ui-slider__fill {
+  background: transparent;
+}
+
+.ui-slider__thumb {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: calc(var(--pos) * (100% - var(--knob)));
+  inline-size: var(--knob);
+  block-size: var(--knob);
+  translate: 0 -50%;
+  border-radius: 50%;
+  outline: none;
+}
+
+.ui-slider__knob {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 3px solid var(--color-primary);
+  box-shadow:
+    0 8px 18px -8px color-mix(in srgb, var(--color-primary) 70%, transparent),
+    0 1px 2px color-mix(in srgb, var(--color-text) 20%, transparent);
+  /* Squash and stretch along the travel, with the volume kept (sx * sy = 1). */
+  transform: scale(var(--sx), var(--sy));
+  transition:
+    scale var(--duration-fast) var(--ease-spring),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+/* Grab: the knob swells a little while held (anticipation of the drag). */
+.ui-slider[data-dragging] .ui-slider__knob {
+  scale: 1.14;
+  background: var(--color-primary-subtle);
+}
+
+.ui-slider__rail:active .ui-slider__knob {
+  scale: 0.92;
+}
+
+.ui-slider[data-dragging] .ui-slider__rail:active .ui-slider__knob {
+  scale: 1.14;
+}
+
+.ui-slider__thumb:focus-visible .ui-slider__knob {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.ui-slider[data-disabled] .ui-slider__knob {
+  border-color: var(--color-text-disabled);
+  box-shadow: none;
+}
+
+/* The value bubble trails the thumb and tilts with the speed (secondary action). */
+.ui-slider__bubble {
+  position: absolute;
+  inset-block-end: calc(50% + var(--knob) / 2 + 0.375rem);
+  inset-inline-start: calc(var(--bubble) * (100% - var(--knob)) + var(--knob) / 2);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 50% 120%;
+  translate: -50% 0.375rem;
+  rotate: calc(var(--tilt) * 1deg);
+  scale: 0.85;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    translate var(--duration-base) var(--ease-spring),
+    scale var(--duration-base) var(--ease-spring);
+}
+
+.ui-slider[data-dragging] .ui-slider__bubble,
+.ui-slider__rail:has(.ui-slider__thumb:focus-visible) .ui-slider__bubble {
+  opacity: 1;
+  translate: -50% 0;
+  scale: 1;
+}
+
+.ui-slider__marks {
+  position: relative;
+  block-size: 1.75rem;
+}
+
+.ui-slider__mark {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(var(--at) * (100% - var(--knob)) + var(--knob) / 2);
+  translate: -50% 0;
+  padding: 0.125rem 0.5rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    scale var(--duration-base) var(--ease-spring);
+}
+
+.ui-slider__mark:first-child {
+  translate: calc(-50% + 0.25rem) 0;
+}
+
+.ui-slider__mark:last-child {
+  translate: calc(-50% - 0.25rem) 0;
+}
+
+.ui-slider__mark:hover {
+  color: var(--color-text);
+}
+
+/* The stop the value sits on pops a little when it lands (exaggeration at the moment of choice). */
+.ui-slider__mark[data-active] {
+  color: var(--color-primary-subtle-text);
+  background: var(--color-primary-subtle);
+  scale: 1.06;
+}
+
+/* The value that must stand out (Von Restorff): a sun dot before the label. */
+.ui-slider__mark[data-highlight]::before {
+  content: '';
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: 0.3rem;
+  border-radius: 50%;
+  background: var(--color-sun);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-sun) 35%, transparent);
+  vertical-align: 0.05em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-slider__knob,
+  .ui-slider__bubble,
+  .ui-slider__mark {
+    transition-duration: 1ms;
+  }
+
+  .ui-slider__bubble {
+    rotate: 0deg;
+  }
+}

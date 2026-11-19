@@ -23,7 +23,13 @@ const fake = vi.hoisted(() => ({
 }));
 
 vi.mock('./webglSupport', () => ({ canRender3D: () => fake.supported }));
-vi.mock('@/app/pages/landing/art/bodyMesh', () => ({ loadBodyMesh: () => Promise.resolve({}) }));
+vi.mock('./bodyAsset', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./bodyAsset')>();
+  return { ...actual, loadBodyAsset: () => Promise.resolve({}) };
+});
+
+const SPOT = { name: bodyStrings.spotGroup };
+const TURN = { name: bodyStrings.turn };
 vi.mock('./injectionScene', () => ({
   createInjectionScene: (options: { onPick: (site: string, spot: number) => void }) => {
     if (fake.returnNull) return null;
@@ -90,7 +96,7 @@ describe('InjectionBodyMap without WebGL', () => {
     const { container } = renderMap();
     expect(container.querySelector('canvas')).toBeNull();
     expect(screen.getByText(bodyStrings.unavailable)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: bodyStrings.views.front })).toBeNull();
+    expect(screen.queryByRole('slider', TURN)).toBeNull();
     expect(errors).not.toHaveBeenCalled();
   });
 
@@ -110,7 +116,10 @@ describe('list and selection', () => {
   it('reflects the selected site and spot in the native radios', () => {
     const { rerender } = renderMap({ selectedSite: 'ABDOMEN_LEFT', selectedSpot: 2 });
     expect(screen.getByRole('radio', { name: /Abdomen izq\./ })).toBeChecked();
-    expect(screen.getByRole('button', { name: 'Punto 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('slider', SPOT)).toHaveAttribute(
+      'aria-valuetext',
+      expect.stringMatching(/^Punto 2/),
+    );
     expect(screen.getByRole('radio', { name: /Abdomen der\./ })).not.toBeChecked();
 
     rerender(
@@ -124,7 +133,10 @@ describe('list and selection', () => {
     );
     expect(screen.getByRole('radio', { name: /Muslo der\./ })).toBeChecked();
     expect(screen.getByRole('radio', { name: /Abdomen izq\./ })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Punto 4' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('slider', SPOT)).toHaveAttribute(
+      'aria-valuetext',
+      expect.stringMatching(/^Punto 4/),
+    );
   });
 
   it('chooses a site with the default spot after the last one used', async () => {
@@ -137,13 +149,14 @@ describe('list and selection', () => {
   it('chooses a spot of the selected site', async () => {
     const user = userEvent.setup();
     const { onSelect } = renderMap({ selectedSite: 'ABDOMEN_RIGHT', selectedSpot: 1 });
-    await user.click(screen.getByRole('button', { name: 'Punto 4' }));
+    screen.getByRole('slider', SPOT).focus();
+    await user.keyboard('{End}');
     expect(onSelect).toHaveBeenCalledWith('ABDOMEN_RIGHT', 4);
   });
 
   it('keeps the spot choice disabled until a site is selected', () => {
     renderMap();
-    expect(screen.getByRole('button', { name: 'Punto 1' })).toBeDisabled();
+    expect(screen.getByRole('slider', SPOT)).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('does not let the user choose an AVOID site', async () => {
@@ -180,7 +193,7 @@ describe('states with text', () => {
 });
 
 describe('WebGL path with a fake scene', () => {
-  it('renders the canvas, the view buttons and the labels, and passes axe', async () => {
+  it('renders the canvas, the turn slider and the labels, and passes axe', async () => {
     fake.supported = true;
     const { container } = renderMap();
     await waitFor(() => {
@@ -189,9 +202,9 @@ describe('WebGL path with a fake scene', () => {
     const canvas = container.querySelector('canvas');
     expect(canvas).not.toBeNull();
     expect(canvas).toHaveAttribute('role', 'img');
-    expect(screen.getByRole('button', { name: bodyStrings.views.front })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
+      'aria-valuetext',
+      bodyStrings.turnNamed.front,
     );
     expect(container.querySelector('.ibm__labels')).toHaveAttribute('aria-hidden', 'true');
     await expectNoAxeViolations(container);
@@ -205,14 +218,17 @@ describe('WebGL path with a fake scene', () => {
     await waitFor(() => {
       expect(fake.scenes).toHaveLength(1);
     });
-    await user.click(screen.getByRole('button', { name: bodyStrings.views.back }));
+    screen.getByRole('slider', TURN).focus();
+    await user.keyboard('{End}');
     expect(onViewChange).toHaveBeenCalledWith('back');
-    expect(screen.getByRole('button', { name: bodyStrings.views.back })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
+      'aria-valuetext',
+      bodyStrings.turnNamed.back,
     );
     const scene = fake.scenes[0];
-    expect(scene?.apply).toHaveBeenLastCalledWith(expect.objectContaining({ view: 'back' }));
+    expect(scene?.apply).toHaveBeenLastCalledWith(
+      expect.objectContaining({ view: 'back', azimuth: Math.PI }),
+    );
   });
 
   it('turns to the back when a back site is chosen in the list', async () => {
@@ -287,10 +303,10 @@ describe('WebGL path with a fake scene', () => {
 });
 
 describe('read-only map', () => {
-  it('shows the chosen spot as text and offers no spot buttons', () => {
+  it('shows the chosen spot as text and offers no spot slider', () => {
     renderMap({ selectedSite: 'ABDOMEN_LEFT', selectedSpot: 2, readOnly: true });
     expect(screen.getByText('Punto elegido: 2.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Punto 1' })).toBeNull();
+    expect(screen.queryByRole('slider', SPOT)).toBeNull();
   });
 
   it('keeps the states visible but disables every site choice', async () => {
@@ -327,10 +343,11 @@ describe('read-only map', () => {
     await waitFor(() => {
       expect(fake.scenes).toHaveLength(1);
     });
-    await user.click(screen.getByRole('button', { name: bodyStrings.views.back }));
-    expect(screen.getByRole('button', { name: bodyStrings.views.back })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    screen.getByRole('slider', TURN).focus();
+    await user.keyboard('{End}');
+    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
+      'aria-valuetext',
+      bodyStrings.turnNamed.back,
     );
   });
 });
@@ -345,9 +362,9 @@ describe('suggested site on the other side', () => {
     });
     expect(screen.getByRole('note')).toHaveTextContent(bodyStrings.suggestedOnFront);
     await user.click(screen.getByRole('button', { name: bodyStrings.showFront }));
-    expect(screen.getByRole('button', { name: bodyStrings.views.front })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    expect(screen.getByRole('slider', TURN)).toHaveAttribute(
+      'aria-valuetext',
+      bodyStrings.turnNamed.front,
     );
     expect(screen.queryByRole('note')).toBeNull();
   });

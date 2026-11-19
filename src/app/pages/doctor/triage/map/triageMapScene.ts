@@ -115,6 +115,12 @@ const RING_LIFT = 0.01;
 const NDC_SPAN = 2;
 const PERCENT = 100;
 const EXPONENT = 10;
+/** Moves travel along an arc: the lift is a share of the distance, never above the cap. */
+const ARC_LIFT_SHARE = 0.35;
+const ARC_MAX_LIFT = 1.2;
+/** The last part of a move squashes the sphere a little as it lands. */
+const LANDING_FROM = 0.72;
+const SQUASH_AMOUNT = 0.18;
 
 function sceneX(tirPct: number | null): number {
   const share = tirPct === null ? 0 : Math.min(PERCENT_MAX, Math.max(0, tirPct)) / PERCENT_MAX;
@@ -268,8 +274,18 @@ export function createTriageMapScene(options: TriageMapSceneOptions): TriageMapS
     let running = false;
     for (const sphere of spheres) {
       const t = animationLength === 0 ? 1 : (now - animationStart - sphere.delay) / animationLength;
-      const eased = easeOut(Math.max(0, t));
+      const clamped = Math.min(1, Math.max(0, t));
+      const eased = easeOut(clamped);
       sphere.mesh.position.lerpVectors(sphere.from, sphere.to, eased);
+      // Travel along an arc, not a straight line: the lift peaks halfway and is gone on landing.
+      const distance = sphere.from.distanceTo(sphere.to);
+      sphere.mesh.position.y += Math.sin(Math.PI * eased) * Math.min(ARC_MAX_LIFT, distance * ARC_LIFT_SHARE);
+      // Squash on landing (follow-through), volume kept: wide and short, then round.
+      const landing = clamped > LANDING_FROM ? (clamped - LANDING_FROM) / (1 - LANDING_FROM) : 0;
+      const squash = Math.sin(Math.PI * landing) * SQUASH_AMOUNT;
+      const base = typeof sphere.mesh.userData['baseScale'] === 'number' ? sphere.mesh.userData['baseScale'] : 1;
+      const lift = sphere.id === selectedId ? 1 + HALF : 1;
+      sphere.mesh.scale.set(base * lift * (1 + squash), base * lift * (1 - squash), base * lift * (1 + squash));
       const stem = sphere.stem.geometry.getAttribute('position') as THREE.BufferAttribute;
       stem.setXYZ(0, sphere.mesh.position.x, 0, sphere.mesh.position.z);
       stem.setXYZ(1, sphere.mesh.position.x, sphere.mesh.position.y, sphere.mesh.position.z);

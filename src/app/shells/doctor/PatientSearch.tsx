@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { useId, useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { normalizeText } from '@/app/pages/doctor/triage/triageModel';
 import { useTriageRows } from '@/app/pages/doctor/triage/queries';
@@ -7,6 +7,7 @@ import { es } from '@/i18n/es';
 
 const MAX_RESULTS = 6;
 const SEARCH_WINDOW = '14d';
+const SHORTCUT = '/';
 
 /**
  * Search over the doctor's assigned patients (the triage list, already cached): typing filters by
@@ -20,6 +21,25 @@ export function PatientSearch() {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The doctor's most frequent action is one key away: "/" focuses the search from anywhere.
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== SHORTCUT || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target !== null &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+      if (typing) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
   const results = useMemo(() => {
     const needle = normalizeText(query);
@@ -57,7 +77,9 @@ export function PatientSearch() {
       </label>
       <Search className="patient-search__icon" size="1.125rem" aria-hidden="true" />
       <input
+        ref={inputRef}
         id={`${id}-input`}
+        aria-keyshortcuts={SHORTCUT}
         type="search"
         role="combobox"
         aria-expanded={showList}
@@ -80,6 +102,9 @@ export function PatientSearch() {
         }}
         onKeyDown={onKeyDown}
       />
+      <kbd className="patient-search__kbd" aria-hidden="true">
+        {SHORTCUT}
+      </kbd>
       {showList ? (
         <ul id={listId} role="listbox" className="patient-search__list" aria-label={es.doctor.shell.search}>
           {results.length === 0 ? (

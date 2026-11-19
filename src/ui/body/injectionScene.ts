@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers -- Art direction of the 3D scene (camera framing, marker sizes in pixels, label layout, timing, colors), like landing/art which is exempt. None of these numbers is a clinical value; thresholds and dosing never live here. */
 import * as THREE from 'three';
-import { surfacePoint, type BodyMeshData } from '@/app/pages/landing/art/bodySdf';
 import { createShellMaterial, type ShellLook } from '@/app/pages/landing/art/shellMaterial';
+import { blendBody, NEUTRAL_SHAPE, type BodyAsset, type BodyShape } from './bodyAsset';
 import { defaultSpotFor, type InjectionSiteEntry } from './injectionModel';
-import { injectionRay, siteView, spotNumbers } from './injectionRays';
+import { ZOOM_MAX, ZOOM_MIN } from './injectionZoom';
 import {
   SITE_CODES,
+  SPOT_NUMBERS,
   type BodyView,
   type InjectionState,
   type SiteCode,
@@ -14,8 +15,16 @@ import {
 
 /**
  * The 3D body with one marker per spot of each injection site. Loaded on demand by
- * `InjectionBodyMap`. It draws a clear blue glass figure (no organs), places the markers with the
- * skin rays of `injectionRays.ts`, and turns the camera between the front and the back.
+ * `InjectionBodyMap`. The body is the MakeHuman mesh (`bodyAsset.ts`) in the landing's clear blue
+ * glass, shaped by the patient's recorded sex and BMI; each marker sits on a vertex of that mesh.
+ *
+ * Motion (every part interruptible):
+ * - The body grows from the neutral figure into the patient's own build (the focal moment).
+ * - The turn is a spring: a programmatic half turn first leans back a little (anticipation) and then
+ *   settles past its mark (follow-through). A drag turns it directly.
+ * - The markers pop onto the skin one site after another, rising along their normal (arcs, stagger).
+ * - The suggested spot is drawn in sun with a pulsing ring, the one mark that must stand out
+ *   (Von Restorff).
  *
  * Markers keep a constant size on screen: their geometry is written in CSS pixels and the group is
  * scaled by the world size of one pixel each frame. Labels are HTML owned by React; this scene only
@@ -29,7 +38,14 @@ export interface InjectionLabel {
 }
 
 export interface InjectionScenePlan {
+  /** Side the slider points at (derived from `azimuth`); kept for the labels and callers. */
   readonly view: BodyView;
+  /** Turn of the body in radians: 0 shows the front, pi the back, pi / 2 the patient's left. */
+  readonly azimuth: number;
+  /** 1 frames the torso and thighs; larger values come closer. */
+  readonly zoom: number;
+  /** The patient's build: the body grows into it. */
+  readonly shape: BodyShape;
   readonly sites: readonly InjectionSiteEntry[];
   readonly selectedSite: SiteCode | null;
   readonly selectedSpot: number | null;
@@ -51,7 +67,11 @@ export interface InjectionSceneOptions {
   /** Overlay holding `[data-label]` elements and `[data-leader]` lines, positioned over the canvas. */
   readonly labelHost: HTMLElement;
   readonly reducedMotion: boolean;
-  readonly mesh: BodyMeshData;
+  readonly body: BodyAsset;
+  /** Called while the body is dragged around, with the new turn in radians. */
+  readonly onRotate?: ((azimuth: number) => void) | undefined;
+  /** Called on a pinch (or ctrl + wheel) with the new zoom, already within its limits. */
+  readonly onZoom?: ((zoom: number) => void) | undefined;
   /** Called on a click or tap on a selectable marker. */
   readonly onPick: (site: SiteCode, spot: SpotNumber) => void;
   /** Called when the pointer moves onto or off a site's markers. */
@@ -77,6 +97,8 @@ const INK = new THREE.Color('#15173a');
 const COBALT = new THREE.Color('#1f4bff');
 const MUTED = new THREE.Color('#5a5f8a');
 const CRITICAL = new THREE.Color('#b3261e');
+/** The landing's sun: only the suggested spot wears it. */
+const SUN = new THREE.Color('#ffc62e');
 
 const PIXEL_RATIO_LIMIT = 2;
 const FOV = 28;
@@ -84,17 +106,49 @@ const FOV = 28;
 const FRAME_HEIGHT = 3.4;
 /** Centred so the top of the frame (2.15) clears the head (2.0); the bottom (-1.25) keeps the thighs. */
 const FRAME_CENTER_Y = 0.45;
-/** Narrowest visible width that still fits the arms, in body units (the figure is about 1.6 wide). */
-const FRAME_MIN_WIDTH = 2;
+/** Narrowest visible width that still fits the arms, in body units (the figure is about 2.5 wide). */
+const FRAME_MIN_WIDTH = 2.7;
 const ELEVATION = 0.06;
-/** The front faces the camera at azimuth 0 (+z); the back at pi (-z). */
-const VIEW_AZIMUTH: Record<BodyView, number> = { front: 0, back: Math.PI };
-const VIEW_DAMPING = 5;
+/** Zoomed in, the framing slides down to the abdomen and hips, where every site lives. */
+const ZOOM_CENTER_Y = 0.3;
+/** Turn spring: a little overshoot when it lands (follow-through). */
+const TURN_STIFFNESS = 90;
+const TURN_DAMPING = 15;
+/** A turn of more than this (radians) starts with a small lean the other way (anticipation). */
+const ANTICIPATE_FROM = Math.PI / 2;
+const ANTICIPATE_SPEED = 1.6;
+/** The body's morph into the patient's build, per second. */
+const MORPH_RATE = 3.2;
+const MORPH_EPSILON = 0.002;
+const DRAG_RADIANS_PER_PX = 0.012;
+const DRAG_THRESHOLD_PX = 4;
+const PINCH_SENSITIVITY = 0.01;
+/** Markers pop in one after another. */
+const MARKER_STAGGER_SECONDS = 0.035;
+const MARKER_POP_SECONDS = 0.38;
+const MARKER_RISE = 0.05;
+/** easeOutBack: the pop overshoots a little and settles. */
+const BACK_OVERSHOOT = 1.7;
+const FACING_MIN = 0.05;
 const SWAY_AMPLITUDE = 0.12;
 const SWAY_RATE = 0.6;
 const PULSE_RATE = 3;
 const MAX_FRAME_SECONDS = 0.05;
 const AZIMUTH_EPSILON = 1e-3;
+
+/** The shortest signed turn from `from` to `to`, in (-pi, pi]. */
+function turnBetween(from: number, to: number): number {
+  const turn = (to - from) % (Math.PI * 2);
+  if (turn > Math.PI) return turn - Math.PI * 2;
+  if (turn <= -Math.PI) return turn + Math.PI * 2;
+  return turn;
+}
+
+function easeOutBack(t: number): number {
+  const c = BACK_OVERSHOOT;
+  const x = t - 1;
+  return 1 + (c + 1) * x * x * x + c * x * x;
+}
 
 /** Marker sizes in CSS pixels. The dot is at least 10 px across; the tap target is 44 px. */
 const DISC_RADIUS_PX = 6;
@@ -128,6 +182,10 @@ const LABEL_GAP_PX = 34;
 interface Marker {
   readonly site: SiteCode;
   readonly spot: SpotNumber;
+  /** Vertex of the body mesh the marker sits on. */
+  readonly vertex: number;
+  /** Place in the entrance stagger. */
+  readonly order: number;
   readonly normal: THREE.Vector3;
   readonly root: THREE.Group;
   /** Child of `root`, scaled to a constant pixel size each frame. */
@@ -153,7 +211,7 @@ interface Placed {
 
 /** Returns `null` when WebGL is unavailable; the page then shows the list alone. */
 export function createInjectionScene(options: InjectionSceneOptions): InjectionScene | null {
-  const { canvas, labelHost, reducedMotion, mesh, onPick, onHover } = options;
+  const { canvas, labelHost, reducedMotion, body, onPick, onHover } = options;
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({
@@ -176,11 +234,18 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
   scene.add(figure);
 
   // ---- Glass body: depth prepass, then the translucent skin (no organs) ----
+  // It starts as the neutral figure and grows into the patient's build (see `morph`).
+  let shape: BodyShape = NEUTRAL_SHAPE;
+  const positions = blendBody(body, shape);
   const bodyGeometry = new THREE.BufferGeometry();
-  bodyGeometry.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
-  bodyGeometry.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
-  bodyGeometry.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+  const positionAttribute = new THREE.BufferAttribute(positions, 3);
+  positionAttribute.setUsage(THREE.DynamicDrawUsage);
+  bodyGeometry.setAttribute('position', positionAttribute);
+  bodyGeometry.setIndex(new THREE.BufferAttribute(body.indices, 1));
+  bodyGeometry.computeVertexNormals();
   bodyGeometry.computeBoundingSphere();
+  const normalAttribute = (): THREE.BufferAttribute =>
+    bodyGeometry.getAttribute('normal') as THREE.BufferAttribute;
   const prepassMaterial = new THREE.MeshBasicMaterial({
     colorWrite: false,
     transparent: true,
@@ -240,18 +305,12 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
   const worldUp = new THREE.Vector3(0, 1, 0);
   const markers: Marker[] = [];
   const markerIndex = new Map<string, Marker>();
+  let order = 0;
   for (const site of SITE_CODES) {
-    // The site's own face decides its ray; all eight sites are built, and the view hides the others.
-    const view = siteView(site);
-    for (const spot of spotNumbers()) {
-      const ray = injectionRay(site, view, spot);
-      if (!ray) continue;
-      const hit = surfacePoint(ray.origin, ray.direction);
-      const position = new THREE.Vector3(...hit.position);
-      const normal = new THREE.Vector3(...hit.normal).normalize();
+    for (const spot of SPOT_NUMBERS) {
+      const vertex = body.anchors[site][spot - 1] ?? 0;
+      const normal = new THREE.Vector3();
       const root = new THREE.Group();
-      root.position.copy(position).addScaledVector(normal, MARKER_LIFT);
-      root.quaternion.setFromUnitVectors(worldUp, normal);
 
       const visual = new THREE.Group();
       const fill = new THREE.Mesh(discGeometry, fadingMaterial(COBALT, 1));
@@ -282,6 +341,8 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
       const marker: Marker = {
         site,
         spot,
+        vertex,
+        order,
         normal,
         root,
         visual,
@@ -296,21 +357,44 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
       markers.push(marker);
       markerIndex.set(`${site}:${spot}`, marker);
     }
+    order += 1;
   }
+
+  /** Puts every marker on its vertex of the current body, along the skin's normal. */
+  const placeMarkers = (): void => {
+    const normals = normalAttribute();
+    for (const marker of markers) {
+      const v = marker.vertex;
+      marker.normal.set(normals.getX(v), normals.getY(v), normals.getZ(v)).normalize();
+      marker.root.position
+        .set(positions[v * 3] ?? 0, positions[v * 3 + 1] ?? 0, positions[v * 3 + 2] ?? 0)
+        .addScaledVector(marker.normal, MARKER_LIFT);
+      marker.root.quaternion.setFromUnitVectors(worldUp, marker.normal);
+    }
+  };
+  placeMarkers();
 
   // ---- State ----
   let plan: InjectionScenePlan = {
     readOnly: false,
     view: 'front',
+    azimuth: 0,
+    zoom: ZOOM_MIN,
+    shape: NEUTRAL_SHAPE,
     sites: [],
     selectedSite: null,
     selectedSpot: null,
     playing: false,
     labels: [],
   };
-  let targetAzimuth = VIEW_AZIMUTH.front;
-  let azimuth = VIEW_AZIMUTH.front;
+  let targetAzimuth = 0;
+  let azimuth = 0;
+  let turnVelocity = 0;
+  let zoom = ZOOM_MIN;
   let time = 0;
+  /** Seconds since the scene started: drives the markers' entrance. */
+  let clock = 0;
+  let dragging: { startX: number; startAzimuth: number; moved: boolean } | null = null;
   let last = performance.now();
   let visible = true;
   let cssWidth = 1;
@@ -326,13 +410,17 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
   const fitDistance = (): void => {
     const half = Math.tan(THREE.MathUtils.degToRad(FOV) / 2);
     const aspect = cssWidth / cssHeight;
-    distance = Math.max(FRAME_HEIGHT / 2 / half, FRAME_MIN_WIDTH / 2 / (half * aspect));
+    distance =
+      Math.max(FRAME_HEIGHT / 2 / half, FRAME_MIN_WIDTH / 2 / (half * aspect)) /
+      Math.max(zoom, ZOOM_MIN);
   };
 
   const placeCamera = (): void => {
     const swaying = plan.playing && !reducedMotion;
     const angle = azimuth + (swaying ? Math.sin(time * SWAY_RATE) * SWAY_AMPLITUDE : 0);
-    const centerY = FRAME_CENTER_Y;
+    const closeness = (zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN);
+    const centerY =
+      FRAME_CENTER_Y + (ZOOM_CENTER_Y - FRAME_CENTER_Y) * Math.min(1, Math.max(0, closeness));
     const center = new THREE.Vector3(0, centerY, 0);
     camera.position.set(
       Math.sin(angle) * Math.cos(ELEVATION) * distance,
@@ -358,7 +446,6 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
       const selected = plan.selectedSite === marker.site && plan.selectedSpot === marker.spot;
       marker.suggested =
         state === 'SUGGESTED' && entry !== undefined && defaultSpotFor(entry) === marker.spot;
-      marker.root.visible = siteView(marker.site) === plan.view;
 
       // Shape carries the state, so it reads without color: filled dot (suggested), ring (allowed),
       // clock (recently used), X (avoid). Color only reinforces it.
@@ -368,8 +455,11 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
       marker.cross.visible = state === 'AVOID';
       marker.selection.visible = selected;
 
+      (marker.fill.material as THREE.MeshBasicMaterial).color.copy(SUN);
       const ringMaterial = marker.ring.material as THREE.MeshBasicMaterial;
-      ringMaterial.color.copy(state === 'AVOID' ? CRITICAL : state === 'RECENT' ? MUTED : COBALT);
+      ringMaterial.color.copy(
+        marker.suggested ? SUN : state === 'AVOID' ? CRITICAL : state === 'RECENT' ? MUTED : COBALT,
+      );
       ringMaterial.opacity =
         state === 'ALLOWED' ? ALLOWED_OPACITY : state === 'AVOID' ? AVOID_OPACITY : SOLID_OPACITY;
     }
@@ -379,8 +469,21 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
     const pulsing = plan.playing && !reducedMotion;
     const pulse = 0.5 + 0.5 * Math.sin(time * PULSE_RATE);
     const hitRadius = (HIT_TARGET_PX / 2) * worldPerPixel;
+    const toCamera = new THREE.Vector3();
     for (const marker of markers) {
-      marker.visual.scale.setScalar(worldPerPixel);
+      // Only the markers on the side the camera sees: the turn is continuous, not front or back.
+      toCamera.copy(camera.position).sub(marker.root.position).normalize();
+      marker.root.visible = marker.normal.dot(toCamera) > FACING_MIN;
+      // Entrance: each site pops after the previous one, rising from the skin (arcs, stagger).
+      const since = clock - marker.order * MARKER_STAGGER_SECONDS;
+      const t = reducedMotion ? 1 : Math.min(1, Math.max(0, since / MARKER_POP_SECONDS));
+      const pop = t <= 0 ? 0.0001 : easeOutBack(t);
+      marker.visual.scale.setScalar(worldPerPixel * pop);
+      marker.visual.position.set(
+        0,
+        (1 - Math.min(1, t)) * MARKER_RISE * Math.sin(Math.PI * Math.min(1, t)),
+        0,
+      );
       marker.hit.scale.setScalar(hitRadius);
       if (marker.suggested && pulsing) {
         marker.ring.scale.setScalar(1 + PULSE_GROWTH * pulse);
@@ -462,16 +565,50 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
     renderer.render(scene, camera);
   };
 
-  const moving = (): boolean => Math.abs(targetAzimuth - azimuth) > AZIMUTH_EPSILON;
+  const turning = (): boolean =>
+    Math.abs(turnBetween(azimuth, targetAzimuth)) > AZIMUTH_EPSILON ||
+    Math.abs(turnVelocity) > AZIMUTH_EPSILON;
+  const morphing = (): boolean =>
+    Math.abs(shape.maleness - plan.shape.maleness) > MORPH_EPSILON ||
+    Math.abs(shape.weight - plan.shape.weight) > MORPH_EPSILON;
+  const entering = (): boolean =>
+    !reducedMotion && clock < SITE_CODES.length * MARKER_STAGGER_SECONDS + MARKER_POP_SECONDS;
   const needsLoop = (): boolean =>
-    visible && !disposed && ((plan.playing && !reducedMotion) || moving());
+    visible &&
+    !disposed &&
+    ((plan.playing && !reducedMotion) || turning() || morphing() || entering());
+
+  /** Writes the body for `shape` into the mesh and moves the markers with the skin. */
+  const applyShape = (next: BodyShape): void => {
+    shape = next;
+    blendBody(body, shape, positions);
+    positionAttribute.needsUpdate = true;
+    bodyGeometry.computeVertexNormals();
+    bodyGeometry.computeBoundingSphere();
+    placeMarkers();
+  };
 
   const tick = (now: number): void => {
     const dt = Math.min((now - last) / 1000, MAX_FRAME_SECONDS);
     last = now;
+    clock += dt;
     if (plan.playing && !reducedMotion) time += dt;
-    if (reducedMotion) azimuth = targetAzimuth;
-    else azimuth += (targetAzimuth - azimuth) * (1 - Math.exp(-VIEW_DAMPING * dt));
+    if (reducedMotion || dragging) {
+      azimuth = dragging ? azimuth : targetAzimuth;
+      turnVelocity = 0;
+    } else {
+      // Damped spring toward the target turn, the short way round.
+      const pull = turnBetween(azimuth, targetAzimuth);
+      turnVelocity += (TURN_STIFFNESS * pull - TURN_DAMPING * turnVelocity) * dt;
+      azimuth += turnVelocity * dt;
+    }
+    if (morphing()) {
+      const k = reducedMotion ? 1 : 1 - Math.exp(-MORPH_RATE * dt);
+      applyShape({
+        maleness: shape.maleness + (plan.shape.maleness - shape.maleness) * k,
+        weight: shape.weight + (plan.shape.weight - shape.weight) * k,
+      });
+    }
     frame();
     if (!needsLoop()) stopLoop();
   };
@@ -525,11 +662,55 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
     return state !== undefined && state !== 'AVOID';
   };
   const onClick = (event: MouseEvent): void => {
+    if (dragged) {
+      dragged = false;
+      return;
+    }
     const marker = pick(event.clientX, event.clientY);
     if (plan.readOnly) return;
     if (marker && selectable(marker)) onPick(marker.site, marker.spot);
   };
+  /** True right after a drag, so the click that ends it does not pick a marker. */
+  let dragged = false;
+  const onPointerDown = (event: PointerEvent): void => {
+    if (event.button !== 0) return;
+    dragging = { startX: event.clientX, startAzimuth: azimuth, moved: false };
+  };
+  const onPointerUp = (event: PointerEvent): void => {
+    if (!dragging) return;
+    dragged = dragging.moved;
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    dragging = null;
+    canvas.style.cursor = '';
+    startLoop();
+  };
+  const onWheel = (event: WheelEvent): void => {
+    // Only a pinch (trackpads send it as ctrl + wheel): a plain wheel keeps scrolling the page.
+    if (!event.ctrlKey || !options.onZoom) return;
+    event.preventDefault();
+    const next = Math.min(
+      ZOOM_MAX,
+      Math.max(ZOOM_MIN, zoom * Math.exp(-event.deltaY * PINCH_SENSITIVITY)),
+    );
+    options.onZoom(next);
+  };
   const onPointerMove = (event: PointerEvent): void => {
+    if (dragging) {
+      const dx = event.clientX - dragging.startX;
+      if (!dragging.moved && Math.abs(dx) > DRAG_THRESHOLD_PX) {
+        dragging.moved = true;
+        canvas.setPointerCapture(event.pointerId);
+        canvas.style.cursor = 'grabbing';
+      }
+      if (dragging.moved) {
+        azimuth = dragging.startAzimuth + dx * DRAG_RADIANS_PER_PX;
+        targetAzimuth = azimuth;
+        turnVelocity = 0;
+        options.onRotate?.(azimuth);
+        frame();
+        return;
+      }
+    }
     const marker = pick(event.clientX, event.clientY);
     canvas.style.cursor = !plan.readOnly && marker && selectable(marker) ? 'pointer' : '';
     const site = marker?.site ?? null;
@@ -556,16 +737,37 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
   });
   visibility.observe(canvas);
   canvas.addEventListener('click', onClick);
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', onPointerUp);
   canvas.addEventListener('pointermove', onPointerMove, { passive: true });
   canvas.addEventListener('pointerleave', onPointerLeave);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
   resize();
 
   return {
     apply(next: InjectionScenePlan): void {
       if (disposed) return;
+      const previousTarget = targetAzimuth;
       plan = next;
-      targetAzimuth = VIEW_AZIMUTH[plan.view];
-      if (reducedMotion) azimuth = targetAzimuth;
+      if (!dragging) {
+        targetAzimuth = plan.azimuth;
+        const turn = turnBetween(azimuth, targetAzimuth);
+        // A big programmatic turn leans the other way first (anticipation), then swings round.
+        if (
+          !reducedMotion &&
+          Math.abs(turn) > ANTICIPATE_FROM &&
+          Math.abs(turnBetween(previousTarget, targetAzimuth)) > AZIMUTH_EPSILON
+        ) {
+          turnVelocity = -Math.sign(turn) * ANTICIPATE_SPEED;
+        }
+        if (reducedMotion) azimuth = targetAzimuth;
+      }
+      if (zoom !== plan.zoom) {
+        zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, plan.zoom));
+        fitDistance();
+      }
+      if (reducedMotion && morphing()) applyShape(plan.shape);
       updateVisuals();
       frame();
       if (needsLoop()) startLoop();
@@ -577,8 +779,12 @@ export function createInjectionScene(options: InjectionSceneOptions): InjectionS
       resizeObserver.disconnect();
       visibility.disconnect();
       canvas.removeEventListener('click', onClick);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerUp);
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerleave', onPointerLeave);
+      canvas.removeEventListener('wheel', onWheel);
       for (const element of labelHost.querySelectorAll<HTMLElement>('[data-label]'))
         element.hidden = true;
       for (const item of disposables) item.dispose();

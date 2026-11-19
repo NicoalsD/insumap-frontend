@@ -7,6 +7,8 @@ import { canRender3D } from '@/ui/body/webglSupport';
 import { TooltipProvider } from '@/ui/shadcn/tooltip';
 import type { SegmentId } from '../triage/triageModel';
 import { doctorGreeting } from './greeting';
+import { AnimatedNumber } from '@/ui/motion/AnimatedNumber';
+import { markPressOrigin } from '@/ui/motion/press';
 
 type StatId = Exclude<SegmentId, 'insufficient'>;
 
@@ -47,6 +49,8 @@ export function DoctorHero({ name, now, windowDays, counts, active, onToggle }: 
               className="doctor-stat"
               data-segment={id}
               aria-pressed={active.includes(id)}
+              data-hot={(id === 'critical' && counts[id] > 0) || undefined}
+              onPointerDown={markPressOrigin}
               onClick={() => {
                 onToggle(id);
               }}
@@ -54,7 +58,7 @@ export function DoctorHero({ name, now, windowDays, counts, active, onToggle }: 
               <span className="doctor-stat__icon" aria-hidden="true">
                 <Icon size="1.25rem" />
               </span>
-              <span className="doctor-stat__value">{format('{value}', { value: counts[id] })}</span>
+              <AnimatedNumber className="doctor-stat__value" value={counts[id]} />
               <span className="doctor-stat__label">{es.doctor.dashboard.stats[id]}</span>
             </button>
           ))}

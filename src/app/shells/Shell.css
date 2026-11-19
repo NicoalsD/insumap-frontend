@@ -48,8 +48,8 @@
   inline-size: 2.5rem;
   block-size: 2.5rem;
   border-radius: 50%;
-  background: var(--color-text);
-  color: #ffc62e;
+  background: var(--color-shell);
+  color: var(--color-sun);
 }
 
 .shell-nav {

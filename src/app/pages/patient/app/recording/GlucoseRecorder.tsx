@@ -18,6 +18,8 @@ import {
   type WhenMode,
 } from './recordingModel';
 import './GlucoseRecorder.css';
+import { RangeRuler } from '@/ui/glucose/RangeRuler';
+import { GlucoseSlider } from './GlucoseSlider';
 
 const FIRST_STEP = 1;
 const WHEN_STEP = 2;
@@ -162,9 +164,19 @@ export function GlucoseRecorder({ thresholds, limits, defaultOpen = false }: Glu
         <h2 id={fieldId('title')} ref={headingRef} tabIndex={-1} className="glucose-recorder__title">
           {es.patient.record.title}
         </h2>
-        <p role="status" className="glucose-recorder__result" data-kind={outcome.kind}>
-          {outcome.message}
-        </p>
+        {/* The end of the flow is its peak: a check draws itself and the value lands on its range. */}
+        <div className="record-peak" data-kind={outcome.kind}>
+          <svg className="record-peak__check" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+            <circle className="record-peak__ring" cx="26" cy="26" r="23" />
+            <path className="record-peak__tick" d="M15 27 l7.5 7.5 L37 19" />
+          </svg>
+          <p role="status" className="glucose-recorder__result" data-kind={outcome.kind}>
+            {outcome.message}
+          </p>
+        </div>
+        <div className="record-peak__ruler">
+          <RangeRuler valueMgDl={outcome.valueMgDl} thresholds={thresholds} />
+        </div>
         {outcome.urgent !== null ? (
           <p className="glucose-recorder__urgent" role="alert">
             {es.patient.record.urgent[outcome.urgent]}
@@ -214,6 +226,13 @@ export function GlucoseRecorder({ thresholds, limits, defaultOpen = false }: Glu
               aria-invalid={errors['value'] ? true : undefined}
               autoFocus
               onChange={(event) => { setValueText(event.target.value); }}
+            />
+            <GlucoseSlider
+              thresholds={thresholds}
+              valueText={valueText}
+              onPick={(value) => {
+                setValueText(String(value));
+              }}
             />
             {errors['value'] ? (
               <p id={fieldId('value-error')} className="glucose-recorder__error">{errors['value']}</p>

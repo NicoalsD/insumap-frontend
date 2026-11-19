@@ -42,8 +42,8 @@
   inline-size: 2.5rem;
   block-size: 2.5rem;
   border-radius: 50%;
-  background: var(--color-text);
-  color: #ffc62e;
+  background: var(--color-shell);
+  color: var(--color-sun);
 }
 
 .doctor-rail__profile {
@@ -183,10 +183,28 @@
   pointer-events: none;
 }
 
+.patient-search__kbd {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-3);
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  min-inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  pointer-events: none;
+}
+
 .patient-search input {
   inline-size: 100%;
   min-block-size: 2.75rem;
-  padding-inline: calc(var(--space-4) + 1.75rem) var(--space-4);
+  padding-inline: calc(var(--space-4) + 1.75rem) calc(var(--space-4) + 1.5rem);
   font: inherit;
   color: var(--color-text);
   background: var(--color-surface);
@@ -205,6 +223,9 @@
 }
 
 .patient-search__list {
+  /* Unfolds from the field that opened it (origin awareness). */
+  transform-origin: 50% 0;
+  animation: search-list-in var(--duration-base) var(--ease-out);
   position: absolute;
   inset-inline: 0;
   inset-block-start: calc(100% + var(--space-2));
@@ -240,6 +261,19 @@
 .patient-search__empty {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+@keyframes search-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97, 0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .patient-search__list {
+    animation: none;
+  }
 }
 
 @media (max-width: 64rem) {

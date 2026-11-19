@@ -7,6 +7,7 @@ import { useInjectionSites } from './injectionQueries';
 import { needleText, reasonTexts, sitesToEntries, todayText } from './injectionModel';
 import { useNow } from '../useNow';
 import './Injection.css';
+import { useOwnBody } from './useOwnBody';
 
 /** The kinds the home layer offers: the two the patient uses every day. */
 const HOME_KINDS = ['BOLUS', 'BASAL'] as const satisfies readonly InsulinKind[];
@@ -57,6 +58,7 @@ function InjectionForKind({ kind }: { readonly kind: InsulinKind }) {
 
 function InjectionSuggestion({ data }: { readonly data: InjectionSitesDto }) {
   const now = useNow();
+  const body = useOwnBody();
   const entries = useMemo(() => sitesToEntries(data, now), [data, now]);
   const suggestion = data.suggestion;
   const [choice, setChoice] = useState<{ site: SiteCode; spot: number } | null>(null);
@@ -69,6 +71,8 @@ function InjectionSuggestion({ data }: { readonly data: InjectionSitesDto }) {
       <>
         <p role="status" className="injection-layer__none">{es.patient.injection.noSuggestion}</p>
         <InjectionBodyMap
+          sex={body.sex}
+          bmi={body.bmi}
           sites={entries}
           selectedSite={null}
           selectedSpot={null}
@@ -94,6 +98,8 @@ function InjectionSuggestion({ data }: { readonly data: InjectionSitesDto }) {
       </ul>
       {chosenOther ? <p className="patient-layer__body">{es.patient.injection.chooseOther}</p> : null}
       <InjectionBodyMap
+          sex={body.sex}
+          bmi={body.bmi}
         sites={entries}
         selectedSite={shown?.site ?? null}
         selectedSpot={shown?.spot ?? null}
