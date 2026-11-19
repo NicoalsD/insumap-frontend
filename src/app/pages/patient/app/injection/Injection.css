@@ -21,6 +21,14 @@
   text-align: center;
 }
 
+/* In the inspector column the two kinds keep one line each. */
+@media (min-width: 64rem) {
+  .injection-layer__kind {
+    padding-inline: var(--space-2);
+    white-space: nowrap;
+  }
+}
+
 .injection-layer__kind input {
   position: absolute;
   opacity: 0;

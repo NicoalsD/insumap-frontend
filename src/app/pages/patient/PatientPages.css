@@ -70,7 +70,7 @@
 @media (min-width: 80rem) {
   .patient-home {
     /* Fixed side columns, so every pixel the window gains goes to the body. */
-    grid-template-columns: minmax(18rem, 22.5rem) minmax(28rem, 1fr) minmax(18rem, 21.5rem);
+    grid-template-columns: minmax(18rem, 22rem) minmax(28rem, 1fr) minmax(18rem, 22rem);
     grid-template-rows: auto 1fr;
     grid-template-areas:
       'data stage inspector'
