@@ -1,24 +1,31 @@
 import { http, HttpResponse } from 'msw';
 import { PERMISSIONS } from '@/core/auth/permissions';
-import { ownOverviewSchema } from '@/services/dto/clinical';
+import { ownOverviewSchema, readingCreateSchema, type GlucoseReadingDto } from '@/services/dto/clinical';
 import { WINDOWS, type MetricsWindow } from '@/services/dto/common';
 import { apiUrl } from '@/services/http/apiUrl';
+import { HTTP_STATUS } from '@/services/http/httpStatus';
 import { DEMO_CLINIC } from '../fixtures/people';
 import { patientId } from '../fixtures/world';
 import { apiError, paginate, readBody, validationError } from '../http';
+import type { AgpResolution } from '../fixtures/world';
 import type { MockState } from '../MockState';
 import { guard } from './guard';
 
 const DEFAULT_WINDOW: MetricsWindow = '14d';
 const FALLBACK_PAGE_DEFAULT = 20;
 const FALLBACK_PAGE_MAX = 100;
+const FALLBACK_READINGS_PAGE_MAX = 2000;
+const FALLBACK_READING_MAX_AGE_DAYS = 14;
+const DAY_MS = 86_400_000;
+const AGP_RESOLUTIONS: readonly AgpResolution[] = ['15min', 'hour'];
+const DEFAULT_AGP_RESOLUTION: AgpResolution = '15min';
 
 function windowOf(url: URL): MetricsWindow | null {
   const raw = url.searchParams.get('window') ?? DEFAULT_WINDOW;
   return (WINDOWS as readonly string[]).includes(raw) ? (raw as MetricsWindow) : null;
 }
 
-/** Doctor, patient and alert/AI endpoints of API.md 8.6, 8.8 to 8.11. */
+/** Doctor, patient and alert/AI endpoints of API.md 8.6, 8.8 to 8.11, plus own readings (POST /readings). */
 export function clinicalHandlers(state: MockState) {
   const page = <T>(items: readonly T[], url: URL) =>
     paginate(
@@ -26,6 +33,14 @@ export function clinicalHandlers(state: MockState) {
       url,
       state.limits['page_size_default'] ?? FALLBACK_PAGE_DEFAULT,
       state.limits['page_size_max'] ?? FALLBACK_PAGE_MAX,
+    );
+  /** Readings may be read in pages of up to 2000 (the 14-day, 15-minute history fits in one page). */
+  const readingsPage = <T>(items: readonly T[], url: URL) =>
+    paginate(
+      items,
+      url,
+      state.limits['page_size_default'] ?? FALLBACK_PAGE_DEFAULT,
+      state.limits['readings_page_size_max'] ?? FALLBACK_READINGS_PAGE_MAX,
     );
   const reasonOk = (reason: unknown): reason is string =>
     typeof reason === 'string' &&
@@ -72,10 +87,57 @@ export function clinicalHandlers(state: MockState) {
       return metrics ? HttpResponse.json(metrics) : apiError('NOT_FOUND');
     }),
 
+    http.post(apiUrl('/readings'), async ({ request }) => {
+      const result = guard(state, request, PERMISSIONS.glucoseWriteOwn);
+      if ('response' in result) return result.response;
+      const parsed = readingCreateSchema(state.limits).safeParse((await readBody(request)) ?? {});
+      if (!parsed.success) {
+        return validationError(
+          parsed.error.issues.map((issue) => ({ field: `body.${issue.path.join('.')}`, type: issue.code })),
+        );
+      }
+      const input = parsed.data;
+      const patient = result.account.id;
+      const measuredAt = new Date(input.measured_at);
+      const measuredIso = measuredAt.toISOString();
+      // Same `client_reading_id` with the same content answers with the original; other content conflicts.
+      const existing = state.world.findOwnReading(patient, input.client_reading_id);
+      if (existing) {
+        const sameContent =
+          existing.value_mg_dl === input.value_mg_dl &&
+          existing.measured_at === measuredIso &&
+          existing.context === (input.context ?? null);
+        return sameContent ? HttpResponse.json(existing) : apiError('CONFLICT');
+      }
+      const nowMs = Date.now();
+      if (measuredAt.getTime() > nowMs) return apiError('READING_IN_FUTURE');
+      const maxAgeMs = (state.limits['reading_max_age_days'] ?? FALLBACK_READING_MAX_AGE_DAYS) * DAY_MS;
+      if (nowMs - measuredAt.getTime() > maxAgeMs) return apiError('READING_TOO_OLD');
+      const min = state.limits['reading_min_mg_dl'] ?? 0;
+      const max = state.limits['reading_max_mg_dl'] ?? Number.MAX_SAFE_INTEGER;
+      if (input.value_mg_dl < min || input.value_mg_dl > max) return apiError('GLUCOSE_OUT_OF_RANGE');
+      const reading: GlucoseReadingDto = {
+        id: state.world.nextId('e3'),
+        client_reading_id: input.client_reading_id,
+        value_mg_dl: input.value_mg_dl,
+        measured_at: measuredIso,
+        source: input.source,
+        context: input.context ?? null,
+        status: 'ACCEPTED',
+        issue_codes: [],
+        simulated: false,
+      };
+      state.world.addOwnReading(patient, reading);
+      return HttpResponse.json(reading, {
+        status: HTTP_STATUS.CREATED,
+        headers: { Location: apiUrl(`readings/${reading.id}`) },
+      });
+    }),
+
     http.get(apiUrl('/readings'), ({ request }) => {
       const result = guard(state, request, PERMISSIONS.glucoseReadOwn);
       if ('response' in result) return result.response;
-      return HttpResponse.json(page(state.world.readings(result.account.id) ?? [], new URL(request.url)));
+      return HttpResponse.json(readingsPage(state.world.readings(result.account.id) ?? [], new URL(request.url)));
     }),
 
     http.get(apiUrl('/patients/:patient_id/overview'), ({ request, params }) => {
@@ -99,7 +161,10 @@ export function clinicalHandlers(state: MockState) {
     http.get(apiUrl('/patients/:patient_id/metrics/agp'), ({ request, params }) => {
       const result = guard(state, request, PERMISSIONS.metricsRead);
       if ('response' in result) return result.response;
-      const agp = state.world.agp(String(params['patient_id']));
+      const raw = new URL(request.url).searchParams.get('resolution') ?? DEFAULT_AGP_RESOLUTION;
+      const resolution = AGP_RESOLUTIONS.find((value) => value === raw);
+      if (!resolution) return validationError([{ field: 'query.resolution', type: 'enum' }]);
+      const agp = state.world.agp(String(params['patient_id']), resolution);
       return agp ? HttpResponse.json(agp) : apiError('NOT_FOUND');
     }),
 
@@ -107,7 +172,7 @@ export function clinicalHandlers(state: MockState) {
       const result = guard(state, request, PERMISSIONS.patientRead);
       if ('response' in result) return result.response;
       const readings = state.world.readings(String(params['patient_id']));
-      return readings ? HttpResponse.json(page(readings, new URL(request.url))) : apiError('NOT_FOUND');
+      return readings ? HttpResponse.json(readingsPage(readings, new URL(request.url))) : apiError('NOT_FOUND');
     }),
 
     http.get(apiUrl('/alerts'), ({ request }) => {

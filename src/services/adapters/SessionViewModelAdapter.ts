@@ -8,7 +8,7 @@ export interface SessionViewModel {
   readonly fullName: string;
   readonly role: Role;
   readonly clinic: { readonly id: string; readonly name: string } | null;
-  /** True for a demo clinic: the "Datos simulados" notice must show on every screen. */
+  /** Clinic flag from the contract (API.md 1.2). The UI decides whether to show anything for it. */
   readonly isDemo: boolean;
   readonly mfaEnabled: boolean;
   readonly consentRequired: boolean;

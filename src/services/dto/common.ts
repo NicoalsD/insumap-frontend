@@ -18,5 +18,5 @@ export function pageOf<T extends z.ZodType>(item: T) {
   return z.object({ items: z.array(item), next_cursor: z.string().nullable() });
 }
 
-/** Marks data of a demo clinic (API.md 1.2). Absent or false for real clinics. */
+/** Marks fictitious data (API.md 1.2). Optional with a default of false: the UI never shows it. */
 export const simulatedFlag = z.boolean().default(false);

@@ -20,19 +20,33 @@ import {
   importBatchSchema,
   importRowPageSchema,
   patientAdminPageSchema,
+  staffUserPageSchema,
   type ClinicDto,
 } from '../dto/admin';
+import {
+  clinicalNotePageSchema,
+  clinicalNoteSchema,
+  messagePageSchema,
+  messageSchema,
+  reminderPageSchema,
+  reminderSchema,
+  treatmentPlanSchema,
+  type MessageCreateDto,
+  type ReminderUpdateDto,
+} from '../dto/care';
 import {
   agpResponseSchema,
   alertPageSchema,
   alertSchema,
   glucoseReadingPageSchema,
+  glucoseReadingSchema,
   metricsResponseSchema,
   ownOverviewSchema,
   patientOverviewSchema,
   recommendationPageSchema,
   recommendationSchema,
   triagePageSchema,
+  type ReadingCreateDto,
 } from '../dto/clinical';
 import type { MetricsWindow } from '../dto/common';
 import { fieldLimitsResponseSchema, type FieldLimitsDto } from '../dto/meta';
@@ -368,6 +382,66 @@ export class InsumapApi {
       body: { reason },
       schema: recommendationSchema,
     });
+  }
+
+  // ---- Patient record, plan and reminders (API.md 8.6, 8.7) ---------------------------
+
+  /** Records a reading of the signed-in patient. Repeating the same `client_reading_id` returns the original. */
+  createOwnReading(body: ReadingCreateDto) {
+    return this.request({ method: 'POST', path: '/readings', body, schema: glucoseReadingSchema });
+  }
+
+  /** The active plan in plain language. It never carries an AI dose. */
+  getOwnTreatmentPlan() {
+    return this.request({ method: 'GET', path: '/patients/own/treatment-plan', schema: treatmentPlanSchema });
+  }
+
+  listOwnReminders(query: QueryParams = {}) {
+    return this.request({ method: 'GET', path: '/reminders', query, schema: reminderPageSchema });
+  }
+
+  updateOwnReminder(reminderId: string, body: ReminderUpdateDto) {
+    return this.request({
+      method: 'PATCH',
+      path: `/reminders/${reminderId}`,
+      body,
+      schema: reminderSchema,
+    });
+  }
+
+  // ---- Doctor: clinical notes and messages (API.md 8.11, 8.12) -----------------------
+
+  listClinicalNotes(patientId: string, query: QueryParams = {}) {
+    return this.request({
+      method: 'GET',
+      path: `/patients/${patientId}/clinical-notes`,
+      query,
+      schema: clinicalNotePageSchema,
+    });
+  }
+
+  createClinicalNote(patientId: string, body: string) {
+    return this.request({
+      method: 'POST',
+      path: `/patients/${patientId}/clinical-notes`,
+      body: { body },
+      schema: clinicalNoteSchema,
+    });
+  }
+
+  /** The doctor passes `patient_id`; the patient reads the own thread without it. */
+  listMessages(query: QueryParams = {}) {
+    return this.request({ method: 'GET', path: '/messages', query, schema: messagePageSchema });
+  }
+
+  sendMessage(body: MessageCreateDto) {
+    return this.request({ method: 'POST', path: '/messages', body, schema: messageSchema });
+  }
+
+  // ---- Admin: clinic staff (API.md 8.3) ----------------------------------------------
+
+  listUsers(query: QueryParams = {}) {
+    return this.request({ method: 'GET', path: '/users', query, schema: staffUserPageSchema });
   }
 
   // ---- Transport ------------------------------------------------------------------------

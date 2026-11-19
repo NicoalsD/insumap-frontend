@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { FieldLimitsDto } from './meta';
 import { instant, pageOf, simulatedFlag, uuid, windowSchema } from './common';
 import { targetProfileSchema } from './targetProfile';
 
@@ -53,6 +54,8 @@ export const agpResponseSchema = z.object({
 });
 
 export const READING_SOURCES = ['MANUAL', 'SMBG', 'CGM'] as const;
+/** Measurement contexts. The enumeration is not in API.md yet (G8); these values are proposed. */
+export const READING_CONTEXTS = ['FASTING', 'BEFORE_MEAL', 'AFTER_MEAL', 'BEDTIME', 'EXERCISE', 'OTHER'] as const;
 
 /** `GET /readings`, `GET /patients/{id}/readings`. */
 export const glucoseReadingSchema = z.object({
@@ -69,6 +72,26 @@ export const glucoseReadingSchema = z.object({
 });
 export type GlucoseReadingDto = z.infer<typeof glucoseReadingSchema>;
 export const glucoseReadingPageSchema = pageOf(glucoseReadingSchema);
+
+/** Upper bound from a published field limit; a limit the API does not send adds no rule. */
+const limitOf = (limits: FieldLimitsDto, key: string): number => limits[key] ?? Number.MAX_SAFE_INTEGER;
+
+/**
+ * Body of `POST /readings` (API.md 8.6). Lengths come from `GET /meta/field-limits`; the value is
+ * only checked for shape here, the measurable range is the server's decision (`GLUCOSE_OUT_OF_RANGE`).
+ */
+export function readingCreateSchema(limits: FieldLimitsDto) {
+  return z.object({
+    client_reading_id: z.string().min(1).max(limitOf(limits, 'request_id_max_length')),
+    value_mg_dl: z.number().positive(),
+    measured_at: z.iso.datetime({ offset: true }),
+    source: z.enum(READING_SOURCES).default('MANUAL'),
+    context: z.enum(READING_CONTEXTS).nullable().optional(),
+    note: z.string().max(limitOf(limits, 'note_max_length')).optional(),
+  });
+}
+/** Request body of `POST /readings`: the input shape, before defaults. */
+export type ReadingCreateDto = z.input<ReturnType<typeof readingCreateSchema>>;
 
 export const ALERT_TYPES = ['HYPOGLYCEMIA', 'HYPERGLYCEMIA', 'ADHERENCE', 'PREDICTIVE'] as const;
 export const ALERT_STATUSES = ['OPEN', 'ACKNOWLEDGED', 'ESCALATED', 'RESOLVED'] as const;

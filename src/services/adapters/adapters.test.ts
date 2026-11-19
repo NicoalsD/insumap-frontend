@@ -121,7 +121,7 @@ describe('SessionViewModelAdapter (P06 Adapter)', () => {
     consent_required: false,
   });
 
-  it('exposes permissions through can() and the demo flag', () => {
+  it('exposes permissions through can() and the clinic flag', () => {
     const vm = new SessionViewModelAdapter().adapt(dto(DOCTOR_ACCOUNT, true));
     expect(vm.can('dashboard.read_assigned')).toBe(true);
     expect(vm.can('patients.import')).toBe(false);

@@ -1,6 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import { apiUrl } from '@/services/http/apiUrl';
-import { DEMO_ACTIVATION, DEMO_CLINIC, DEMO_RECOVERY_CODE, DEMO_TOTP_CODE, PATIENT_ACCOUNT } from '../fixtures/people';
+import {
+  DEMO_ACTIVATION,
+  DEMO_CLINIC,
+  DEMO_RECOVERY_CODE,
+  DEMO_TOTP_CODE,
+  PATIENT_ACCOUNT,
+} from '../fixtures/people';
 import { apiError, readBody, validationError } from '../http';
 import type { MockState } from '../MockState';
 import { guard, hasCsrfHeader } from './guard';
