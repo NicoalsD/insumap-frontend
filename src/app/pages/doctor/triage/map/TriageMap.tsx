@@ -28,6 +28,8 @@ const GLUCOSE_TOP_TICK = 300;
 const FRONT_LANE = 3.4;
 /** The mg/dL title sits above the top tick. */
 const AXIS_TITLE_LIFT = 100;
+/** The band's label sits halfway between its cut points. */
+const HALVES = 2;
 const KEY_STEP = 0.12;
 const TOOLTIP_OFFSET = 14;
 
@@ -74,7 +76,7 @@ function labelsFor(thresholds: GlucoseThresholds): MapLabel[] {
     {
       text: format(es.doctor.triage.map.target, { low: thresholds.rangeLowMgDl, high: thresholds.rangeHighMgDl }),
       kind: 'axis',
-      at: [RIGHT_EDGE, (thresholds.rangeLowMgDl + thresholds.rangeHighMgDl) / 2, 0],
+      at: [RIGHT_EDGE, (thresholds.rangeLowMgDl + thresholds.rangeHighMgDl) / HALVES, 0],
     },
     { text: es.doctor.triage.map.axisGlucose, kind: 'axis', at: [LEFT_EDGE, GLUCOSE_TOP_TICK + AXIS_TITLE_LIFT, FRONT_LANE] },
   ];

@@ -205,39 +205,6 @@
   padding: 0;
 }
 
-.thread__bubble {
-  display: grid;
-  gap: var(--space-1);
-  max-inline-size: 85%;
-  padding: var(--space-3) var(--space-4);
-  border-radius: 1.25rem;
-  font-size: var(--font-size-md);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-/* Patient turns: cobalt with white text, on the right. */
-.thread__bubble[data-sender='PATIENT'] {
-  justify-self: end;
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-  border-bottom-right-radius: var(--radius-sm);
-}
-
-/* Team and assistant turns: white with a thin border, on the left. */
-.thread__bubble[data-sender='DOCTOR'] {
-  justify-self: start;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: var(--border-width) solid var(--color-border);
-  border-bottom-left-radius: var(--radius-sm);
-}
-
-.thread__meta {
-  font-size: var(--font-size-xs);
-  color: inherit;
-}
-
 .emergency-notice {
   padding: var(--space-3) var(--space-4);
   background: var(--color-warning-subtle);

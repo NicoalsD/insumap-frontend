@@ -237,3 +237,16 @@ export const ownOverviewSchema = patientOverviewSchema.omit({
 export type OwnOverviewDto = Omit<z.infer<typeof ownOverviewSchema>, 'active_plan'> & {
   active_plan: ActivePlanDto | null;
 };
+
+/** `POST /patients/{id}/clinical-summaries` (API.md 8.10): the AI or template summary of a period. */
+export const clinicalSummarySchema = z.object({
+  id: uuid,
+  patient_id: uuid,
+  summary_text: z.string(),
+  sections: z.array(z.object({ title: z.string(), text: z.string() })),
+  is_fallback: z.boolean(),
+  generated_at: instant,
+  /** Label the API asks to show with the summary ("Generado con IA como apoyo; verifica…"). */
+  label: z.string(),
+});
+export type ClinicalSummaryDto = z.infer<typeof clinicalSummarySchema>;

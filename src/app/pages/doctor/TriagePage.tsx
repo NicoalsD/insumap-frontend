@@ -4,22 +4,33 @@ import { format } from '@/i18n/format';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { EmptyState, ErrorState, LoadingState } from '@/ui/States';
-import { PageHeader } from '@/ui/PageHeader';
 import { useSession } from '@/state/useSession';
 import { OpenAlertsRail } from './triage/OpenAlertsRail';
 import { PatientPreview } from './triage/PatientPreview';
 import { formatClock } from './triage/formatting';
 import { useTriageRows } from './triage/queries';
 import { TriageMap } from './triage/map/TriageMap';
+import { ClinicalAssistant } from './dashboard/ClinicalAssistant';
+import { DoctorHero } from './dashboard/DoctorHero';
+import { PriorityCarousel } from './dashboard/PriorityCarousel';
+import { RiskCard } from './dashboard/RiskCard';
+import './dashboard/dashboard.css';
 import { TriageQueue } from './triage/TriageQueue';
 import { TriageToolbar } from './triage/TriageToolbar';
 import { buildTriageLayout, permissionSet, TRIAGE_WIDGET } from './triage/triageLayout';
 import { WidgetTree } from './triage/WidgetTree';
 import { countSegments, filterRows, sortRows, type TriageItem } from './triage/triageModel';
-import { useTriageFilters } from './triage/useTriageFilters';
+import { TRIAGE_WINDOWS, useTriageFilters } from './triage/useTriageFilters';
 import './triage/TriagePage.css';
 
-/** Queue of the doctor's assigned patients, by risk. Filters, sort and window live in the URL. */
+/** Cards shown in the priority carousel: the queue's top rows by risk. */
+const PRIORITY_CARDS = 8;
+
+/**
+ * The doctor's panel: greeting with the counts that filter, risk spread, priority patients, the
+ * clinical assistant, the 3D map with the preview, the queue and the open alerts. Filters, sort and
+ * window live in the URL.
+ */
 export function TriagePage() {
   const { state } = useSession();
   const session = state.status === 'authenticated' ? state.session : null;
@@ -134,9 +145,54 @@ export function TriagePage() {
     ),
   };
 
+  const priority = sortRows(rows, 'risk', 'descending').slice(0, PRIORITY_CARDS);
+  const pendingSuggestions = rows.reduce((total, row) => total + row.pendingRecommendationsCount, 0);
+  const windowDays = Number.parseInt(filters.window, 10);
+
   return (
-    <div className="page">
-      <PageHeader title={es.nav.triage} description={description} />
+    <div className="page doctor-dashboard">
+      <div className="dashboard-top">
+        <p className="dashboard-top__meta">{description}</p>
+        <div className="window-chips" role="group" aria-label={es.doctor.dashboard.windowChips}>
+          {TRIAGE_WINDOWS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={filters.window === option}
+              onClick={() => {
+                filters.setWindow(option);
+              }}
+            >
+              {format(es.doctor.dashboard.windowChip, { days: Number.parseInt(option, 10) })}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid-12 doctor-dashboard__row">
+        <div style={{ '--span': 8, '--span-md': 8 } as React.CSSProperties}>
+          <DoctorHero
+            name={session.fullName}
+            now={now}
+            windowDays={windowDays}
+            counts={counts}
+            active={filters.segments}
+            onToggle={filters.toggleSegment}
+          />
+        </div>
+        <div style={{ '--span': 4, '--span-md': 8 } as React.CSSProperties}>
+          <RiskCard rows={rows} />
+        </div>
+      </div>
+      {rows.length > 0 ? (
+        <div className="grid-12 doctor-dashboard__row doctor-dashboard__row--start">
+          <div style={{ '--span': 7, '--span-md': 8 } as React.CSSProperties}>
+            <PriorityCarousel rows={priority} selectedId={selected?.patientId ?? null} onSelect={filters.selectPatient} />
+          </div>
+          <div style={{ '--span': 5, '--span-md': 8 } as React.CSSProperties}>
+            <ClinicalAssistant rows={priority} pendingSuggestions={pendingSuggestions} />
+          </div>
+        </div>
+      ) : null}
       {rows.some((row) => row.isFallback) ? (
         <p className="triage-notice">
           <Badge tone="neutral">{es.notices.aiFallback}</Badge>
