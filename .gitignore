@@ -17,3 +17,8 @@ blob-report/
 .DS_Store
 *.log
 npm-debug.log*
+
+# Impeccable: solo se versionan el contrato de dirección y la configuración
+.impeccable/*
+!.impeccable/direction.md
+!.impeccable/config*

@@ -1,0 +1,120 @@
+.range-ruler {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.range-ruler__reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.range-ruler__value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-tight);
+}
+
+.range-ruler[data-size='compact'] .range-ruler__value {
+  font-size: var(--font-size-md);
+}
+
+.range-ruler__unit {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.range-ruler__state {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--state-text);
+}
+
+.range-ruler[data-state='VERY_LOW'] { --state-text: var(--color-range-very-low-text); }
+.range-ruler[data-state='LOW'] { --state-text: var(--color-range-low-text); }
+.range-ruler[data-state='IN_RANGE'] { --state-text: var(--color-range-in-range-text); }
+.range-ruler[data-state='HIGH'] { --state-text: var(--color-range-high-text); }
+.range-ruler[data-state='VERY_HIGH'] { --state-text: var(--color-range-very-high-text); }
+
+.range-ruler__track {
+  position: relative;
+  display: flex;
+  block-size: var(--space-3);
+  margin-block-start: var(--space-3);
+  border-radius: var(--radius-pill);
+}
+
+.range-ruler[data-size='compact'] .range-ruler__track {
+  block-size: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.range-ruler__band {
+  flex: 1 1 0;
+  background: var(--band-fill);
+  opacity: 0.35;
+}
+.range-ruler__band:first-child {
+  border-start-start-radius: var(--radius-pill);
+  border-end-start-radius: var(--radius-pill);
+}
+.range-ruler__band:last-child {
+  border-start-end-radius: var(--radius-pill);
+  border-end-end-radius: var(--radius-pill);
+}
+.range-ruler__band[data-state='VERY_LOW'] { --band-fill: var(--color-range-very-low); }
+.range-ruler__band[data-state='LOW'] { --band-fill: var(--color-range-low); }
+.range-ruler__band[data-state='IN_RANGE'] { --band-fill: var(--color-range-in-range); opacity: 1; }
+.range-ruler__band[data-state='HIGH'] { --band-fill: var(--color-range-high); }
+.range-ruler__band[data-state='VERY_HIGH'] { --band-fill: var(--color-range-very-high); }
+
+/* The target band stays at full strength: it is the range the patient aims for. */
+
+.range-ruler__marker {
+  position: absolute;
+  inset-block: calc(var(--space-2) * -1);
+  inset-inline-start: calc(var(--marker) * 1%);
+  inline-size: 4px;
+  translate: -50% 0;
+  background: var(--color-text);
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-pill);
+  box-sizing: content-box;
+  box-shadow: var(--shadow-sm);
+}
+
+.range-ruler__ticks {
+  position: relative;
+  block-size: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.range-ruler__tick {
+  position: absolute;
+  inset-inline-start: calc(var(--tick) * 1%);
+  translate: -50% 0;
+}
+
+.range-ruler__target {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.range-ruler__clamp {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+@media (forced-colors: active) {
+  .range-ruler__marker {
+    background: CanvasText;
+  }
+}
