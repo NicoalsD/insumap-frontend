@@ -4,7 +4,8 @@
   gap: var(--space-4);
   inline-size: 100%;
   max-inline-size: 72rem;
-  margin-inline: auto;
+  /* Aligned with the page title, like a chat panel next to its notice, not centered in the window. */
+  margin-inline: 0;
 }
 
 .messages-main {
@@ -77,7 +78,7 @@
 @media (min-width: 64rem) {
   .messages-layout {
     grid-template-columns: minmax(0, 44rem) 20rem;
-    justify-content: center;
+    justify-content: start;
     align-items: start;
     gap: var(--space-8);
   }
