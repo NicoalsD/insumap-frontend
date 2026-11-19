@@ -1,0 +1,6 @@
+# Markdown is hand-formatted; .agents/workflow.md must stay identical across the 5 repos.
+*.md
+dist/
+coverage/
+public/mockServiceWorker.js
+package-lock.json
