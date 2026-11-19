@@ -1,5 +1,5 @@
 # Archivos que no se versionan en insumap-frontend
-node_modules/
+node_modules
 dist/
 dist-ssr/
 .vite/
