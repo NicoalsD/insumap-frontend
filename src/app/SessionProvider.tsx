@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { SessionViewModelAdapter } from '@/services/adapters/SessionViewModelAdapter';
+import { SessionViewModelAdapter, type SessionViewModel } from '@/services/adapters/SessionViewModelAdapter';
 import { SessionContext, type SessionContextValue, type SessionState } from '@/state/sessionContext';
 import { useApi } from '@/state/useApi';
 
@@ -17,11 +17,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<SessionState>({ status: 'loading', session: null });
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (): Promise<SessionViewModel | null> => {
     try {
-      setState({ status: 'authenticated', session: adapter.adapt(await api.getCurrentUser()) });
+      const session = adapter.adapt(await api.getCurrentUser());
+      setState({ status: 'authenticated', session });
+      return session;
     } catch {
       setState(ANONYMOUS);
+      return null;
     }
   }, [api]);
 
