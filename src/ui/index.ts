@@ -1,5 +1,7 @@
 export { Badge, type BadgeProps, type BadgeTone } from './Badge';
 export { rangeTone } from './rangeTone';
+export { RangeBand, type RangeBandProps } from './glucose/RangeBand';
+export { RangeRuler, type RangeRulerProps } from './glucose/RangeRuler';
 export { Button, type ButtonProps } from './Button';
 export { ButtonLink, type ButtonLinkProps } from './ButtonLink';
 export { DataTable, type DataTableColumn, type DataTableProps } from './DataTable';
