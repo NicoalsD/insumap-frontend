@@ -105,9 +105,22 @@ export function useAlertList(filters: AlertListFilters) {
 export function useMarkReviewed(window: MetricsWindow) {
   const { api } = useApi();
   const queryClient = useQueryClient();
+  const key = [...triageKey, window];
   return useMutation({
     mutationFn: (patientId: string) => api.markPatientReviewed(patientId, window),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: triageKey }),
+    // Optimistic: the row says "revisado" at once (Doherty threshold); a failure puts it back.
+    onMutate: async (patientId: string) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const before = queryClient.getQueryData<TriageItem[]>(key);
+      queryClient.setQueryData<TriageItem[]>(key, (rows) =>
+        rows?.map((row) => (row.patientId === patientId ? { ...row, reviewedAt: new Date() } : row)),
+      );
+      return { before };
+    },
+    onError: (_error, _patientId, context) => {
+      if (context?.before) queryClient.setQueryData(key, context.before);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: triageKey }),
   });
 }
 

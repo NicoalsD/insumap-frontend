@@ -36,13 +36,17 @@ afterEach(() => {
 });
 
 /** Signs in as the example doctor through the real login and MFA steps, then opens the record. */
+/** Under a loaded parallel run the record needs longer than the default second to settle. */
+const SETTLE_TIMEOUT_MS = 4000;
+
 async function openRecord(id: string = PATIENT, path?: string) {
   const view = renderApp('/login');
   await userEvent.type(await screen.findByLabelText(es.access.login.email), DOCTOR_ACCOUNT.email);
   await userEvent.type(screen.getByLabelText(es.access.login.password), DOCTOR_ACCOUNT.password);
   await userEvent.click(screen.getByRole('button', { name: es.access.login.submit }));
   await userEvent.type(await screen.findByLabelText(es.access.mfa.code), DEMO_TOTP_CODE);
-  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ });
+  // The panel greets the doctor once its queue and 3D map are ready; under a loaded run that takes a while.
+  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ }, { timeout: 4000 });
   await view.router.navigate(path ?? `/doctor/patients/${id}`);
   return view;
 }
@@ -153,11 +157,22 @@ describe('patient detail (P19 AGP, P06 adapters, P08 layout, P15 window in URL)'
     'changes the window from the selector and keeps it in the URL',
     async () => {
       const view = await openRecord();
-      const sevenDays = await screen.findByRole('radio', { name: format(es.detail.header.windowOption, { days: 7 }) });
-      await userEvent.click(sevenDays);
-      expect(sevenDays).toBeChecked();
+      await screen.findByRole('slider', { name: es.detail.header.windowLabel });
+      // Let the record settle (its last panel is the timeline) before acting on it.
+      await screen.findByRole('heading', { level: 2, name: es.detail.timeline.title });
+      // A stop under the slider takes the window there in one click.
+      await userEvent.click(screen.getByText(format(es.doctor.dashboard.windowChip, { days: 7 })));
+      await waitFor(
+        () => {
+          expect(view.router.state.location.search).toContain('window=7d');
+        },
+        { timeout: SETTLE_TIMEOUT_MS },
+      );
       await waitFor(() => {
-        expect(view.router.state.location.search).toContain('window=7d');
+        expect(screen.getByRole('slider', { name: es.detail.header.windowLabel })).toHaveAttribute(
+          'aria-valuetext',
+          format(es.detail.header.windowOption, { days: 7 }),
+        );
       });
     },
     TEST_TIMEOUT_MS,

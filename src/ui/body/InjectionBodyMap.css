@@ -19,18 +19,25 @@
   }
 }
 
-.ibm__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-end: var(--space-3);
+/* Under the body, at its width: the turn first (used most), then the zoom and the pause. */
+.ibm__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-1) var(--space-4);
+  margin-block-start: var(--space-3);
 }
 
-.ibm__views {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.ibm__controls > .ibm__turn {
+  grid-column: 1 / -1;
+}
+
+.ibm__controls > .ui-button {
+  margin-block-end: var(--space-6);
+}
+
+.ibm__drag-hint {
+  margin-block-start: var(--space-1);
 }
 
 /* Vertical figure: 3:4, at least 30rem tall on desktop, the full width of the column on mobile. */
@@ -39,10 +46,14 @@
   inline-size: 100%;
   min-block-size: 30rem;
   aspect-ratio: 3 / 4;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  /* The landing's lilac stage under the glass body, lit from above (solid drawing). */
+  background:
+    radial-gradient(120% 70% at 50% 18%, var(--color-surface) 0%, transparent 60%),
+    linear-gradient(180deg, var(--color-lilac-subtle), var(--color-surface-sunken));
   overflow: hidden;
+  cursor: grab;
 }
 
 .ibm__canvas {
@@ -210,17 +221,6 @@
   accent-color: var(--color-primary);
 }
 
-.ibm__spot-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.ibm__spot {
-  /* Touch target: 48 px tall (control-height-lg) on every spot button. */
-  min-block-size: var(--control-height-lg);
-  justify-content: center;
-}
 
 .ibm__hint,
 .ibm__notice {

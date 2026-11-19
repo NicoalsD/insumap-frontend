@@ -13,10 +13,33 @@
   line-height: var(--line-height-snug);
   text-decoration: none;
   white-space: nowrap;
+  /* Press feedback: a quick squash from where it was touched, released with a spring. */
+  transform-origin: var(--press-x, 50%) var(--press-y, 50%);
   transition:
     background-color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+    color var(--duration-fast) var(--ease-out),
+    scale var(--duration-base) var(--ease-spring);
+}
+
+.ui-button:active:not(:disabled, [aria-disabled='true']) {
+  scale: 0.96;
+  transition-duration: var(--duration-fast), var(--duration-fast), var(--duration-fast), var(--duration-instant);
+}
+
+/* An arrow icon after the label pulls back, then leads the way (anticipation). */
+.ui-button > svg:last-child:not(:first-child) {
+  transition: translate var(--duration-slow) var(--ease-anticipate);
+}
+
+.ui-button:hover > svg:last-child:not(:first-child) {
+  translate: 3px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-button:active:not(:disabled, [aria-disabled='true']) {
+    scale: 1;
+  }
 }
 
 .ui-button[data-size='sm'] {
@@ -33,7 +56,7 @@
 .ui-button[data-variant='primary'] {
   background: var(--color-primary);
   color: var(--color-primary-text);
-  box-shadow: 0 10px 22px -12px rgb(31 75 255 / 0.7);
+  box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--color-primary) 70%, transparent);
 }
 .ui-button[data-variant='primary']:hover:not(:disabled, [aria-disabled='true']) {
   background: var(--color-primary-hover);

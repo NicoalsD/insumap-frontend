@@ -33,6 +33,27 @@
   --color-shell-active: #2a2f6e;
   --color-shell-focus: #9db2ff;
 
+  /*
+   * ---- Landing accents (src/app/pages/landing/landing.css) ----
+   * The sun of the brand mark, and the mint, bubble and lilac tiles of the landing's feature icons.
+   * Each tile pairs a subtle ground with its ink (checked at 4.5:1 in tokens.contrast.test.ts).
+   */
+  --color-sun: #ffc62e;
+  /* Ink on the sun in both themes: the brand mark's contrast never flips. */
+  --color-on-sun: #15173a;
+  --color-sun-subtle: #fff4cf;
+  --color-sun-ink: #5a3f00;
+  --color-mint: #3fd09e;
+  --color-mint-subtle: #d8f6ea;
+  --color-mint-ink: #0d5c41;
+  --color-bubble: #ff8ac4;
+  --color-bubble-subtle: #ffe1ef;
+  --color-bubble-ink: #8a1f57;
+  --color-lilac-subtle: #e1e7ff;
+  --color-lilac-ink: #1636c4;
+  /* Text on the cobalt zone: the landing's lead color there. */
+  --color-on-primary-muted: #e3e8ff;
+
   /* ---- Primary action: cobalt ---- */
   --color-primary: #1f4bff;
   --color-primary-hover: #1636c4;
@@ -189,6 +210,10 @@
   --duration-slow: 280ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Overshoot then settle: follow-through for things that land (chips, thumbs, cards). */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* A small pull back before the move: anticipation, for arrows and launches. */
+  --ease-anticipate: cubic-bezier(0.68, -0.55, 0.27, 1.55);
 
   /* ---- Layers ---- */
   --z-base: 0;
@@ -229,6 +254,19 @@
     --color-shell-text-muted: #b7bce6;
     --color-shell-active: #2a2f6e;
     --color-shell-focus: #9db2ff;
+
+    --color-sun: #ffc62e;
+    --color-sun-subtle: #33280c;
+    --color-sun-ink: #f6dc95;
+    --color-mint: #3fd09e;
+    --color-mint-subtle: #0f2e23;
+    --color-mint-ink: #8ce8c3;
+    --color-bubble: #ff8ac4;
+    --color-bubble-subtle: #3a1229;
+    --color-bubble-ink: #ffb3d8;
+    --color-lilac-subtle: #1c2048;
+    --color-lilac-ink: #c0ccff;
+    --color-on-primary-muted: #1f2654;
 
     --color-primary: #8aa2ff;
     --color-primary-hover: #a6b8ff;

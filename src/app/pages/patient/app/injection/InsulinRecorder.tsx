@@ -11,6 +11,7 @@ import { buildDoseBody, parseUnits, RECORDABLE_KINDS, sitesToEntries, type Recor
 import { injectionKeys, useInjectionSites } from './injectionQueries';
 import { useNow } from '../useNow';
 import './Injection.css';
+import { useOwnBody } from './useOwnBody';
 
 const FIRST_STEP = 1;
 const UNITS_STEP = 2;
@@ -36,6 +37,7 @@ export function InsulinRecorder({ limits }: InsulinRecorderProps) {
   const queryClient = useQueryClient();
   const { saveDose } = usePendingReadings();
   const now = useNow();
+  const body = useOwnBody();
   const idBase = useId();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(FIRST_STEP);
@@ -196,6 +198,8 @@ export function InsulinRecorder({ limits }: InsulinRecorderProps) {
             {sites.isPending ? <p>{es.patient.injection.record.saving}</p> : null}
             {data ? (
               <InjectionBodyMap
+          sex={body.sex}
+          bmi={body.bmi}
                 sites={entries}
                 selectedSite={shown?.site ?? null}
                 selectedSpot={shown?.spot ?? null}

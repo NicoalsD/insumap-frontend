@@ -29,7 +29,8 @@ async function signInAsDoctor(path?: string) {
   await userEvent.type(screen.getByLabelText(es.access.login.password), DOCTOR_ACCOUNT.password);
   await userEvent.click(screen.getByRole('button', { name: es.access.login.submit }));
   await userEvent.type(await screen.findByLabelText(es.access.mfa.code), DEMO_TOTP_CODE);
-  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ });
+  // The panel greets the doctor once its queue and 3D map are ready; under a loaded run that takes a while.
+  await screen.findByRole('heading', { level: 1, name: /^Buen(os|as) (días|tardes|noches),/ }, { timeout: 4000 });
   if (path) await view.router.navigate(path);
   return view;
 }
@@ -120,11 +121,12 @@ describe('triage queue (P15 filters, P08 layout)', () => {
     await waitFor(() => {
       expect(critical).toHaveAttribute('aria-pressed', 'true');
     });
-    const windowSelect = screen.getByRole('combobox', { name: es.doctor.triage.windowLabel });
+    const windowSlider = screen.getByRole('slider', { name: es.doctor.triage.windowLabel });
     await waitFor(() => {
-      expect(windowSelect).toHaveValue('7d');
+      expect(windowSlider).toHaveAttribute('aria-valuetext', 'Últimos 7 días');
     });
-    await userEvent.selectOptions(windowSelect, '30d');
+    windowSlider.focus();
+    await userEvent.keyboard('{End}');
     await waitFor(() => {
       expect(router.state.location.search).toContain('window=30d');
     });

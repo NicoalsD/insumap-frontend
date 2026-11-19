@@ -11,37 +11,8 @@
   margin-block-end: var(--space-4);
 }
 
-.window-chips {
-  display: inline-flex;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  background: var(--color-surface);
-  border: var(--border-width) solid var(--color-border-soft);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-sm);
-}
-
-.window-chips button {
-  min-block-size: 2.25rem;
-  padding-inline: var(--space-4);
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-}
-
-.window-chips button:hover {
-  color: var(--color-text);
-  background: var(--color-surface-hover);
-}
-
-.window-chips button[aria-pressed='true'] {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+.dashboard-top__window {
+  inline-size: min(24rem, 100%);
 }
 
 /* ---- Hero ---- */
@@ -53,7 +24,7 @@
   border-radius: var(--radius-lg);
   background: var(--color-primary);
   color: var(--color-primary-text);
-  box-shadow: 0 24px 48px -28px rgb(31 75 255 / 0.6);
+  box-shadow: 0 24px 48px -28px color-mix(in srgb, var(--color-primary) 60%, transparent);
   overflow: clip;
 }
 
@@ -75,7 +46,7 @@
 
 .doctor-hero__lead {
   font-size: var(--font-size-lead);
-  color: #dfe5ff;
+  color: var(--color-on-primary-muted);
 }
 
 .doctor-hero__stats {
@@ -86,7 +57,9 @@
   margin-block-start: var(--space-4);
 }
 
+/* White cards on the cobalt zone, as the landing's chips; the icon tile carries the landing tone. */
 .doctor-stat {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
@@ -94,33 +67,40 @@
   align-items: center;
   padding: var(--space-3) var(--space-4);
   text-align: start;
-  border: var(--border-width) solid rgb(255 255 255 / 0.35);
+  border: 0;
   border-radius: var(--radius-md);
-  background: rgb(255 255 255 / 0.12);
-  color: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
+  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--color-text) 60%, transparent);
+  transform-origin: var(--press-x, 50%) var(--press-y, 50%);
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    transform var(--duration-base) var(--ease-spring),
+    box-shadow var(--duration-base) var(--ease-out);
 }
 
 .doctor-stat:hover {
-  background: rgb(255 255 255 / 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 
+/* Press: a squash from the point that was pressed (origin awareness), released with a spring. */
 .doctor-stat:active {
-  transform: translateY(1px);
+  transform: scale(0.96, 0.92);
+  transition-duration: var(--duration-instant);
 }
 
 .doctor-stat:focus-visible {
-  outline: var(--focus-ring-width) solid #ffffff;
+  outline: var(--focus-ring-width) solid var(--color-sun);
   outline-offset: var(--focus-ring-offset);
 }
 
+/* The active filter wears the sun ring: the one card that must stand out (Von Restorff). */
 .doctor-stat[aria-pressed='true'] {
-  background: #ffffff;
-  color: var(--color-text);
+  box-shadow:
+    0 0 0 3px var(--color-sun),
+    0 16px 28px -16px color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 
 .doctor-stat__icon {
@@ -129,14 +109,44 @@
   place-items: center;
   inline-size: 2.5rem;
   block-size: 2.5rem;
-  border-radius: var(--radius-sm);
-  background: #ffffff;
-  color: var(--color-primary);
+  border-radius: 0.75rem;
+  background: var(--color-lilac-subtle);
+  color: var(--color-lilac-ink);
+  transition: transform var(--duration-slow) var(--ease-spring);
 }
 
-.doctor-stat[aria-pressed='true'] .doctor-stat__icon {
-  background: var(--color-primary);
-  color: #ffffff;
+.doctor-stat:hover .doctor-stat__icon {
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.doctor-stat[data-segment='critical'] .doctor-stat__icon {
+  background: var(--color-bubble-subtle);
+  color: var(--color-bubble-ink);
+}
+
+.doctor-stat[data-segment='openAlerts'] .doctor-stat__icon {
+  background: var(--color-sun-subtle);
+  color: var(--color-sun-ink);
+}
+
+.doctor-stat[data-segment='unreviewed'] .doctor-stat__icon {
+  background: var(--color-mint-subtle);
+  color: var(--color-mint-ink);
+}
+
+/* Anything critical: the bubble tile breathes until the doctor looks (exaggeration, once a few times). */
+.doctor-stat[data-segment='critical'][data-hot] .doctor-stat__icon {
+  animation: stat-hot 1.6s var(--ease-in-out) 3;
+}
+
+@keyframes stat-hot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-bubble) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-bubble) 35%, transparent);
+  }
 }
 
 .doctor-stat__value {
@@ -144,11 +154,13 @@
   font-size: var(--font-size-2xl);
   font-weight: 750;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .doctor-stat__label {
   font-size: var(--font-size-sm);
   line-height: 1.25;
+  color: var(--color-text-muted);
 }
 
 .doctor-hero__stage {
@@ -216,19 +228,36 @@
   inline-size: 100%;
   max-inline-size: 3rem;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: var(--color-shell-text-muted);
+  background: var(--color-mint);
+  transform-origin: 50% 100%;
+  animation: bar-rise var(--duration-slow) var(--ease-spring) both;
+  animation-delay: calc(var(--order, 0) * 70ms);
 }
 
 .risk-card__bar[data-tier='MEDIUM'] .risk-card__fill {
-  background: #9db2ff;
+  background: var(--color-shell-focus);
 }
 
 .risk-card__bar[data-tier='HIGH'] .risk-card__fill {
-  background: #f5b84a;
+  background: var(--color-sun);
 }
 
 .risk-card__bar[data-tier='CRITICAL'] .risk-card__fill {
-  background: #ff8a7f;
+  background: var(--color-bubble);
+}
+
+/* The bars grow from the floor one after another, with a small overshoot (follow-through). */
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .risk-card__fill,
+  .doctor-stat[data-segment='critical'][data-hot] .doctor-stat__icon {
+    animation: none;
+  }
 }
 
 .risk-card__value {

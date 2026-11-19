@@ -1,6 +1,7 @@
 import { LoaderCircle } from 'lucide-react';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { es } from '@/i18n/es';
+import { markPressOrigin } from './motion/press';
 import './Button.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'shell';
@@ -24,6 +25,7 @@ export function Button({
   type = 'button',
   children,
   onClick,
+  onPointerDown,
   ...rest
 }: ButtonProps) {
   return (
@@ -35,6 +37,10 @@ export function Button({
       data-size={size}
       aria-disabled={loading || undefined}
       aria-busy={loading || undefined}
+      onPointerDown={(event) => {
+        markPressOrigin(event);
+        onPointerDown?.(event);
+      }}
       onClick={loading ? (event) => { event.preventDefault(); } : onClick}
     >
       {loading ? <LoaderCircle className="ui-button__spinner" size="1.125em" aria-hidden="true" /> : icon}

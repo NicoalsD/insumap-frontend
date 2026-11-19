@@ -1,13 +1,12 @@
-import { useId } from 'react';
 import type { GlycemicMetricsDto } from '@/services/dto/clinical';
 import type { MetricsViewModel } from '@/services/adapters/MetricsViewModelAdapter';
-import { windowToDays } from '@/services/adapters/MetricsViewModelAdapter';
 import type { MetricsWindow } from '@/services/dto/common';
 import { RangeBand } from '@/ui/glucose/RangeBand';
 import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import { WINDOW_OPTIONS } from './constants';
 import './MetricsRow.css';
+import { WindowSlider } from '../WindowSlider';
 
 export interface MetricsRowProps {
   readonly window: MetricsWindow;
@@ -40,7 +39,6 @@ function deltaText(current: number, previous: number | undefined, unit: string):
  * title says so, instead of repeating it on every figure.
  */
 export function MetricsRow({ window, onWindow, metrics, current, previous }: MetricsRowProps) {
-  const groupName = useId();
   const percent = (value: number) => format(es.glucose.percent, { value });
   const points = es.detail.metrics.unitPoints;
   const notApplicable = es.detail.metrics.notApplicable;
@@ -93,23 +91,13 @@ export function MetricsRow({ window, onWindow, metrics, current, previous }: Met
     <section className="panel metrics-row" aria-labelledby="metrics-title">
       <header className="panel__header">
         <h2 id="metrics-title">{es.detail.metrics.title}</h2>
-        <fieldset className="metrics-row__window">
-          <legend className="visually-hidden">{es.detail.header.windowLabel}</legend>
-          {WINDOW_OPTIONS.map((option) => (
-            <label key={option} className="metrics-row__option">
-              <input
-                type="radio"
-                name={groupName}
-                value={option}
-                checked={window === option}
-                onChange={() => {
-                  onWindow(option);
-                }}
-              />
-              <span>{format(es.detail.header.windowOption, { days: windowToDays(option) ?? 0 })}</span>
-            </label>
-          ))}
-        </fieldset>
+        <WindowSlider
+          className="metrics-row__window"
+          label={es.detail.header.windowLabel}
+          value={window}
+          options={WINDOW_OPTIONS}
+          onChange={onWindow}
+        />
       </header>
       {previous === undefined ? <p className="metrics-row__note">{es.detail.metrics.deltaUnavailable}</p> : null}
       <div className="panel__body metrics-row__body">

@@ -5,6 +5,20 @@
 export const bodyStrings = {
   views: { front: 'Frente', back: 'Espalda' },
   viewGroup: 'Vista del cuerpo',
+  turn: 'Girar el cuerpo',
+  turnMarks: { back: 'Espalda', right: 'Der.', front: 'Frente', left: 'Izq.' },
+  turnNamed: {
+    front: 'De frente',
+    back: 'De espalda',
+    left: 'Lado izquierdo del paciente',
+    right: 'Lado derecho del paciente',
+  },
+  turnDegrees: 'Girado {degrees}° hacia el lado {side}',
+  turnSide: { left: 'izquierdo', right: 'derecho' },
+  zoom: 'Acercar',
+  zoomValue: '{value} %',
+  zoomMarks: { far: 'Cuerpo', near: 'Sitios' },
+  dragHint: 'Arrastra el cuerpo para girarlo o pellizca para acercarte.',
   pause: 'Pausar la animación',
   play: 'Reanudar la animación',
   canvas:
@@ -13,6 +27,7 @@ export const bodyStrings = {
     'Un sitio marcado como Evitar no se puede elegir. Usa las flechas del teclado para moverte por la lista.',
   spotGroup: 'Punto dentro del sitio',
   spotOption: 'Punto {spot}',
+  spotSuggested: 'Punto {spot}, el que sigue en la rotación',
   spotNeedsSite: 'Primero elige un sitio.',
   spotLastHint: 'Último punto usado: {spot}.',
   spotChosen: 'Punto elegido: {spot}.',

@@ -9,6 +9,7 @@ import { EmptyState } from '@/ui/States';
 import { formatDateTime } from './format';
 import { analyzeInjectionHistory, HISTORY_DAYS, type SiteUsage } from './model/injectionHistory';
 import './InjectionPanel.css';
+import type { PatientSex } from '@/services/dto/injection';
 
 export interface InjectionPanelProps {
   /** Every dose the patient recorded; the panel keeps the last `HISTORY_DAYS` days. */
@@ -16,6 +17,9 @@ export interface InjectionPanelProps {
   /** End of the window: the API's period end, so the view does not depend on the browser clock. */
   readonly periodEnd: Date;
   readonly timeZone: string;
+  /** The patient's recorded sex and BMI: the 3D body takes their build. */
+  readonly sex?: PatientSex | undefined;
+  readonly bmi?: number | null | undefined;
 }
 
 const NO_OP = () => undefined;
@@ -37,7 +41,7 @@ function siteCountText(usage: SiteUsage): string {
  *
  * Pattern: none (presentation over `analyzeInjectionHistory`).
  */
-export function InjectionPanel({ doses, periodEnd, timeZone }: InjectionPanelProps) {
+export function InjectionPanel({ doses, periodEnd, timeZone, sex, bmi }: InjectionPanelProps) {
   const history = useMemo(() => analyzeInjectionHistory(doses, periodEnd), [doses, periodEnd]);
   const entries = useMemo<InjectionSiteEntry[]>(
     () =>
@@ -65,6 +69,8 @@ export function InjectionPanel({ doses, periodEnd, timeZone }: InjectionPanelPro
           selectedSpot={null}
           onSelect={NO_OP}
           readOnly
+          sex={sex}
+          bmi={bmi}
           label={es.detail.injection.mapLabel}
         />
         <p className="injection-panel__note">{format(es.detail.injection.windowNote, { days: HISTORY_DAYS })}</p>

@@ -63,3 +63,42 @@ export class GlucoseRulerStrategy implements ChartRenderStrategy<GlucoseRulerInp
     };
   }
 }
+
+/** The ruler's five equal bands as mg/dL spans, from the profile's cut points. */
+function rulerSpans(t: GlucoseThresholds): readonly (readonly [number, number])[] {
+  const lowSpan = t.rangeLowMgDl - t.veryLowMgDl;
+  const highSpan = t.veryHighMgDl - t.rangeHighMgDl;
+  return [
+    [t.veryLowMgDl - lowSpan, t.veryLowMgDl],
+    [t.veryLowMgDl, t.rangeLowMgDl],
+    [t.rangeLowMgDl, t.rangeHighMgDl],
+    [t.rangeHighMgDl, t.veryHighMgDl],
+    [t.veryHighMgDl, t.veryHighMgDl + highSpan],
+  ];
+}
+
+/**
+ * Where a value sits on the ruler, 0 to 100 (each band is a fifth, whatever its mg/dL width), so a
+ * slider over the ruler gives the narrow low bands as much room as the wide high ones.
+ */
+export function rulerPosition(valueMgDl: number, t: GlucoseThresholds): number {
+  const spans = rulerSpans(t);
+  const first = spans[0];
+  const last = spans[spans.length - 1];
+  if (!first || !last) return 0;
+  if (valueMgDl <= first[0]) return 0;
+  if (valueMgDl >= last[1]) return PERCENT_TOTAL;
+  const index = spans.findIndex(([low, high]) => valueMgDl >= low && valueMgDl < high);
+  const [low, high] = spans[index] ?? first;
+  return (index + (valueMgDl - low) / (high - low)) * BAND_WIDTH_PCT;
+}
+
+/** The mg/dL value at a ruler position (the inverse of `rulerPosition`), rounded to whole mg/dL. */
+export function rulerValue(position: number, t: GlucoseThresholds): number {
+  const spans = rulerSpans(t);
+  const clamped = Math.min(PERCENT_TOTAL, Math.max(0, position));
+  const index = Math.min(spans.length - 1, Math.floor(clamped / BAND_WIDTH_PCT));
+  const [low, high] = spans[index] ?? [0, 0];
+  const fraction = (clamped - index * BAND_WIDTH_PCT) / BAND_WIDTH_PCT;
+  return Math.round(low + fraction * (high - low));
+}

@@ -1,6 +1,8 @@
+import type { CSSProperties } from 'react';
 import { es } from '@/i18n/es';
 import { format } from '@/i18n/format';
 import type { TriageItem } from '../triage/triageModel';
+import { AnimatedNumber } from '@/ui/motion/AnimatedNumber';
 
 const TIERS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
 const PERCENT = 100;
@@ -21,9 +23,9 @@ export function RiskCard({ rows }: { readonly rows: readonly TriageItem[] }) {
         {es.doctor.dashboard.risk.title}
       </h2>
       <ul className="risk-card__bars">
-        {counts.map(({ tier, count }) => (
-          <li key={tier} className="risk-card__bar" data-tier={tier}>
-            <span className="risk-card__value measure">{count}</span>
+        {counts.map(({ tier, count }, order) => (
+          <li key={tier} className="risk-card__bar" data-tier={tier} style={{ '--order': order } as CSSProperties}>
+            <AnimatedNumber className="risk-card__value measure" value={count} />
             <span
               className="risk-card__fill"
               style={{ blockSize: `${String(Math.max(MIN_BAR_PCT, (count / max) * PERCENT))}%` }}

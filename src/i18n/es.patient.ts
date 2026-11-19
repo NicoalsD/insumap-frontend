@@ -34,6 +34,8 @@ export const patientStrings = {
     again: 'Registrar otra',
     value: {
       label: 'Glucosa en mg/dL',
+      slider: 'O deslízalo sobre tus rangos',
+      sliderValue: '{value} mg/dL, {state}',
       hint: 'Escribe el número que marca tu medidor, solo enteros.',
       required: 'Escribe tu glucosa.',
       integer: 'Escribe solo números enteros, sin decimales ni letras.',

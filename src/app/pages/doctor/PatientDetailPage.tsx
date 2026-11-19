@@ -246,7 +246,13 @@ export function PatientDetailPage() {
               </div>
             </section>
           ) : (
-            <InjectionPanel doses={insulinDoses.data} periodEnd={metricsView.periodTo} timeZone={timeZone} />
+            <InjectionPanel
+              doses={insulinDoses.data}
+              periodEnd={metricsView.periodTo}
+              timeZone={timeZone}
+              sex={dto.patient.sex}
+              bmi={dto.patient.bmi}
+            />
           )}
           <NotesPanel patientId={patientId} notes={notes.data ?? []} canWrite timeZone={timeZone} />
           <MessagesPanel
