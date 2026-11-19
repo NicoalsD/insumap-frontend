@@ -6,7 +6,7 @@ import { CareAssignmentViewModelAdapter, type CareAssignmentViewModel } from './
 import { ConsoleTable, type ConsoleColumn } from './console/ConsoleTable';
 import { doctorLoads, loadShare } from './console/careTeamSummary';
 import { formatAdminDate } from './console/formatAdminDate';
-import { useAssignmentWalk, useClinic, usePatientWalk } from './console/adminQueries';
+import { staffNames, useAssignmentWalk, useClinic, usePatientWalk, useStaffWalk } from './console/adminQueries';
 import type { SortState } from './console/useSortParam';
 import './console/console.css';
 
@@ -21,13 +21,14 @@ export function CareTeamsPage() {
   const clinic = useClinic();
   const assignments = useAssignmentWalk();
   const patients = usePatientWalk();
+  const staff = useStaffWalk();
   const [sort, setSort] = useState<SortState>(ASSIGNMENT_SORT);
 
   const rows = useMemo<CareAssignmentViewModel[]>(() => {
     const names = new Map((patients.data ?? []).map((patient) => [patient.id, patient.full_name]));
-    const adapter = new CareAssignmentViewModelAdapter(names);
+    const adapter = new CareAssignmentViewModelAdapter(names, staffNames(staff.data));
     return (assignments.data ?? []).map((dto) => adapter.adapt(dto));
-  }, [assignments.data, patients.data]);
+  }, [assignments.data, patients.data, staff.data]);
 
   const loads = useMemo(() => doctorLoads(rows), [rows]);
   const maxLoad = loads[0]?.patientCount ?? 0;

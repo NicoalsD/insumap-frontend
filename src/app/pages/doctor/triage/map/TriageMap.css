@@ -1,0 +1,122 @@
+.triage-map {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* The stage takes the height of a screen block, never less than a usable view. */
+.triage-map__stage {
+  position: relative;
+  block-size: clamp(24rem, 52vh, 38rem);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-hover);
+  overflow: clip;
+}
+
+.triage-map__canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.triage-map__canvas:active {
+  cursor: grabbing;
+}
+
+.triage-map__canvas:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.triage-map__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.triage-map__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.triage-map__label[data-kind='axis'] {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.triage-map__tooltip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.triage-map__tooltip span {
+  color: var(--color-text-muted);
+}
+
+.triage-map__reset {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-end: var(--space-3);
+}
+
+.triage-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.triage-map__legend-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.triage-map__legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+}
+
+.triage-map__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.triage-map__legend p {
+  flex-basis: 100%;
+}
+
+.triage-map__swatch {
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+  border-radius: 50%;
+}
+
+.triage-map__swatch--empty {
+  border: 2px solid var(--color-text-disabled);
+}
+
+.triage-map__unavailable {
+  color: var(--color-text-muted);
+}

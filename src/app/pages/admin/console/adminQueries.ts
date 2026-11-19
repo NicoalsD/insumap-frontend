@@ -104,6 +104,11 @@ export function useAssignmentWalk() {
   });
 }
 
+/** Staff names by user id, to name the doctors the assignments reference by id. */
+export function staffNames(staff: readonly { readonly id: string; readonly full_name: string }[] | undefined): ReadonlyMap<string, string> {
+  return new Map((staff ?? []).map((member) => [member.id, member.full_name]));
+}
+
 /** Every clinic staff member (doctors and clinic admins) from `GET /users`. */
 export function useStaffWalk() {
   const { api } = useApi();

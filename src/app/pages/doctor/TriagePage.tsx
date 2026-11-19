@@ -10,6 +10,7 @@ import { OpenAlertsRail } from './triage/OpenAlertsRail';
 import { PatientPreview } from './triage/PatientPreview';
 import { formatClock } from './triage/formatting';
 import { useTriageRows } from './triage/queries';
+import { TriageMap } from './triage/map/TriageMap';
 import { TriageQueue } from './triage/TriageQueue';
 import { TriageToolbar } from './triage/TriageToolbar';
 import { buildTriageLayout, permissionSet, TRIAGE_WIDGET } from './triage/triageLayout';
@@ -82,6 +83,23 @@ export function TriagePage() {
   );
 
   const painters: Record<string, ReactNode> = {
+    [TRIAGE_WIDGET.map]: (
+      <section className="panel" aria-labelledby="triage-map-title">
+        <header className="panel__header">
+          <div>
+            <h2 id="triage-map-title">{es.doctor.triage.map.title}</h2>
+            <p className="panel__lead">{es.doctor.triage.map.description}</p>
+          </div>
+        </header>
+        <div className="panel__body">
+          {rowsQuery.isSuccess && visible.length > 0 ? (
+            <TriageMap rows={visible} selectedId={selected?.patientId ?? null} onSelect={filters.selectPatient} />
+          ) : (
+            queueBody
+          )}
+        </div>
+      </section>
+    ),
     [TRIAGE_WIDGET.queue]: (
       <section className="panel triage-panel" aria-labelledby="triage-queue-title">
         <header className="panel__header">

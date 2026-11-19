@@ -41,7 +41,7 @@ export function LatestLayer({
     <section className="patient-layer latest" aria-labelledby="layer-latest" data-state={state}>
       <h2 id="layer-latest" className="patient-layer__title">{heading}</h2>
       <p className="latest__value">
-        <span className="latest__number">{reading.value_mg_dl}</span>
+        <span className="latest__number">{format('{value}', { value: reading.value_mg_dl })}</span>
         <span className="latest__unit">{es.glucose.unit}</span>
       </p>
       <p className="latest__state">
@@ -145,7 +145,10 @@ export function WeekLayer({
         <>
           <p className="week__value">
             <span className="week__label">{es.patient.week.inRangeLabel}</span>
-            <span className="week__percent">{format(es.patient.week.percent, { value: Math.round(tirPct) })}</span>
+            <span className="week__percent">
+              {format('{value}', { value: Math.round(tirPct) })}
+              <span className="week__percent-sign">{es.patient.week.percentSign}</span>
+            </span>
           </p>
           <div className="week__bar" role="img" aria-label={format(es.patient.week.bar, { value: Math.round(tirPct) })}>
             <span className="week__fill" style={{ inlineSize: `${Math.min(Math.max(tirPct, 0), PERCENT_MAX)}%` }} />
