@@ -69,7 +69,8 @@ export function usePatientAgp(patientId: string) {
 export function usePatientReadings(patientId: string, windowDays: number) {
   const { api } = useApi();
   return useQuery({
-    queryKey: [...patientKey(patientId), 'readings', windowDays],
+    // Outside `patientKey`: a note or an alert action must not re-read every page of the window.
+    queryKey: ['detail-readings', patientId, windowDays],
     queryFn: async () => {
       // The API caps a page at `page_size_max`: read the window page by page, newest first.
       const from = new Date(Date.now() - windowDays * DAY_MS).toISOString();
