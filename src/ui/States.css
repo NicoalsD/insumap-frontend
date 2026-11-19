@@ -1,0 +1,29 @@
+.ui-state {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  max-inline-size: var(--measure-prose);
+  padding: var(--space-8) var(--space-6);
+}
+
+.ui-state[data-centered] {
+  justify-items: center;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.ui-state__icon {
+  color: var(--color-text-muted);
+}
+
+.ui-state[data-tone='error'] .ui-state__icon {
+  color: var(--color-critical);
+}
+
+.ui-state__title {
+  font-size: var(--font-size-xl);
+}
+
+.ui-state__body {
+  color: var(--color-text-muted);
+}
