@@ -114,6 +114,16 @@ export function usePatientNotes(patientId: string) {
   });
 }
 
+/** Insulin doses the patient recorded, every page: the injection panel reads the last two weeks of them. */
+export function usePatientInsulinDoses(patientId: string) {
+  const { api } = useApi();
+  return useQuery({
+    queryKey: [...patientKey(patientId), 'insulin-doses'],
+    queryFn: () => fetchAllPages((cursor) => api.listPatientInsulinDoses(patientId, { cursor })),
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function usePatientMessages(patientId: string) {
   const { api } = useApi();
   return useQuery({

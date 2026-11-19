@@ -67,3 +67,21 @@
 .care-panel__form > button {
   justify-self: start;
 }
+
+.care-panel__subtitle {
+  margin: var(--space-2) 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.care-panel__items {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.care-panel__items li {
+  display: grid;
+  gap: var(--space-1);
+}

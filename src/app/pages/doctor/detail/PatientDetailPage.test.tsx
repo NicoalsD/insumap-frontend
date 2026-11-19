@@ -8,7 +8,10 @@ import { apiError } from '@/mocks/http';
 import { server } from '@/mocks/server';
 import { DEMO_TOTP_CODE, DOCTOR_ACCOUNT } from '@/mocks/fixtures/people';
 import { patientId } from '@/mocks/fixtures/ids';
+import { RECENT_DOSES_SHOWN } from './model/injectionHistory';
 import { TIMELINE_PAGE_SIZE } from './constants';
+
+const HOUR_MS = 3_600_000;
 import { apiUrl } from '@/services/http/apiUrl';
 import { expectNoAxeViolations } from '@/test/axe';
 import { renderApp } from '@/test/renderApp';
@@ -69,6 +72,51 @@ describe('patient detail (P19 AGP, P06 adapters, P08 layout, P15 window in URL)'
       await openRecord();
       expect(await screen.findByText(/Hipoglucemia nocturna repetida/)).toBeInTheDocument();
       expect(screen.getByText(/bajo 70 mg\/dL/)).toBeInTheDocument();
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    'shows the injection sites from her recorded doses, with the last doses and no suggested dose',
+    async () => {
+      const { container } = await openRecord();
+      expect(await screen.findByRole('heading', { level: 2, name: es.detail.injection.title })).toBeInTheDocument();
+      await waitFor(() => {
+        expect(container.querySelectorAll('.injection-panel__recent li').length).toBeGreaterThan(0);
+      });
+      expect(container.querySelectorAll('.injection-panel__recent li').length).toBeLessThanOrEqual(RECENT_DOSES_SHOWN);
+      const panel = container.querySelector('.injection-panel');
+      expect(panel).not.toBeNull();
+      expect(within(panel as HTMLElement).queryByText(/sugerid/i)).toBeNull();
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    'shows the review aid when one site holds more than 40 % of her recent doses',
+    async () => {
+      const now = Date.now();
+      const dose = (n: number, site: string) => ({
+        id: `e5000000-0000-4000-8000-${String(n).padStart(12, '0')}`,
+        insulin_product_id: null,
+        kind: 'BOLUS',
+        units: 6,
+        administered_at: new Date(now - n * HOUR_MS).toISOString(),
+        treatment_plan_id: null,
+        injection_site: site,
+        injection_spot: 1,
+        simulated: false,
+      });
+      const items = [
+        ...Array.from({ length: 6 }, (_, i) => dose(i + 1, 'ABDOMEN_LEFT')),
+        dose(20, 'THIGH_RIGHT'),
+      ];
+      server.use(
+        http.get(apiUrl('/patients/:patient_id/insulin-doses'), () => HttpResponse.json({ items, next_cursor: null })),
+      );
+      await openRecord();
+      expect(await screen.findByText(es.detail.injection.concentrationTitle)).toBeInTheDocument();
+      expect(screen.getByRole('note')).toHaveTextContent('Abdomen, lado izquierdo');
     },
     TEST_TIMEOUT_MS,
   );

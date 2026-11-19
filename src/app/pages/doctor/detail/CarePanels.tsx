@@ -1,5 +1,7 @@
 import { useId, useState, type SyntheticEvent } from 'react';
 import type { ActivePlan } from './types';
+import { planInsulinItems } from './model/planItems';
+import { describeAllowedSites } from './model/planSites';
 import type { ClinicalNoteDto, MessageDto } from '@/services/dto/care';
 import { apiErrorMessage } from '@/services/api/ApiError';
 import { useFormSchemas } from '@/state/useFormSchemas';
@@ -13,19 +15,52 @@ import { formatDateTime } from './format';
 import { useClinicalNoteWrite, useMessageWrite } from './queries';
 import './CarePanels.css';
 
-/** Active plan of the patient, in plain language. The AI never adds a dose here. */
+/**
+ * Active plan of the patient, in plain language, and for each insulin item the sites the doctor
+ * allows. The AI never adds a dose here. The note says the patient sees a site suggestion within
+ * that restriction; when the plan carries no items the panel says so instead of inventing them.
+ *
+ * Pattern: none (presentation over `planInsulinItems` and `describeAllowedSites`).
+ */
 export function PlanPanel({ plan }: { readonly plan: ActivePlan | null }) {
+  const items = planInsulinItems(plan);
   return (
     <section className="panel" aria-labelledby="plan-title">
       <header className="panel__header">
         <h2 id="plan-title">{es.detail.plan.title}</h2>
       </header>
-      <div className="panel__body">
+      <div className="panel__body care-panel">
         {plan ? (
           <>
             <p className="care-panel__name">{plan.name}</p>
             <p className="care-panel__meta">{format(es.detail.plan.version, { version: plan.version })}</p>
             <p>{plan.summary}</p>
+            {items.length > 0 ? (
+              <div>
+                <h3 className="care-panel__subtitle">{es.detail.plan.insulinItems}</h3>
+                <ul className="care-panel__items">
+                  {items.map((item) => (
+                    <li key={`${item.time_of_day}-${item.label}`}>
+                      <span className="care-panel__meta">
+                        {item.time_of_day} · {es.detail.injection.kind[item.insulin_kind ?? 'BASAL']}
+                      </span>
+                      <span className="care-panel__text">{item.label}</span>
+                      <span className="care-panel__text">
+                        <strong>{es.detail.plan.sitesLabel}: </strong>
+                        {describeAllowedSites(item.injection_sites, {
+                          noRestriction: es.detail.injection.noRestriction,
+                          noneAllowed: es.detail.injection.noneAllowed,
+                          region: es.detail.injection.region,
+                        })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="care-panel__meta">{es.detail.plan.sitesNote}</p>
+              </div>
+            ) : (
+              <p className="care-panel__meta">{es.detail.plan.sitesMissing}</p>
+            )}
           </>
         ) : (
           <p>{es.detail.plan.empty}</p>
