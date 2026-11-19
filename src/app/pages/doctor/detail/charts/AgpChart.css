@@ -1,0 +1,72 @@
+.agp-chart__figure {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.agp-chart__plot {
+  position: relative;
+  block-size: 14rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+
+.agp-chart__plot:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.agp-chart__svg {
+  position: absolute;
+  inset: var(--space-3) var(--space-3) var(--space-6);
+  inline-size: calc(100% - 2 * var(--space-3));
+  block-size: calc(100% - var(--space-3) - var(--space-6));
+  overflow: visible;
+}
+
+.agp-chart__target {
+  fill: var(--color-range-in-range-subtle);
+}
+
+.agp-chart__outer {
+  fill: var(--color-primary-subtle);
+}
+
+.agp-chart__inner {
+  fill: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.agp-chart__median {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+}
+
+.agp-chart__cursor {
+  stroke: var(--color-text);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.agp-chart__tick {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  transform: translateX(-50%);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.agp-chart__tooltip {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.agp-chart__summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.agp-chart__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}

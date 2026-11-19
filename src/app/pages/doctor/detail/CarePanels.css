@@ -1,0 +1,69 @@
+.care-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.care-panel__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.care-panel__meta {
+  display: block;
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.care-panel__text,
+.care-panel__name {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.care-panel__name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.care-panel__notice {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  font-size: var(--font-size-xs);
+}
+
+.care-panel__empty {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* The message box fills the panel width; the button keeps its natural size on the left. */
+.care-panel__form {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.care-panel__form > .ui-field,
+.care-panel__form .ui-field {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.care-panel__form textarea {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  resize: vertical;
+}
+
+.care-panel__form > button {
+  justify-self: start;
+}

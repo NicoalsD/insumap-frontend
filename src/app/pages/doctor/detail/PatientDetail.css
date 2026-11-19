@@ -1,0 +1,207 @@
+/* Patient record (patron F): sticky header over a 12-column grid, main column 8, rail 4. */
+.patient-detail__grid {
+  margin-block-start: var(--space-4);
+}
+
+.patient-detail__stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  grid-column: span var(--span, 12);
+}
+
+/* Every block of a column may shrink to the column width; wide content scrolls inside itself. */
+.patient-detail__stack > *,
+.patient-detail__wide > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.patient-detail__wide {
+  min-inline-size: 0;
+  margin-block-start: var(--space-4);
+}
+
+.detail-header {
+  position: sticky;
+  inset-block-start: var(--topbar-height);
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-header h1 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  margin: 0;
+}
+
+.detail-header__profile {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.detail-header__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.detail-header__facts dt {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.detail-header__facts dd {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.detail-header__clock {
+  margin-inline-start: var(--space-2);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+}
+
+.patient-detail .panel__body > p {
+  margin-block: 0 var(--space-3);
+}
+
+.ai-panel,
+.ai-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.ai-card {
+  padding-block-end: var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.ai-card:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}
+
+.ai-card__badges,
+.ai-card__actions,
+.open-alerts__head,
+.open-alerts__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-card__summary,
+.ai-card__dose,
+.ai-card__expiry,
+.ai-card__reason,
+.ai-card__unavailable,
+.ai-panel__note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.ai-card__factors {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.ai-card__expiry,
+.ai-panel__note {
+  color: var(--color-text-muted);
+}
+
+.ai-card__form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.open-alerts__list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.open-alerts__item {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.open-alerts__time {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.open-alerts__form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.open-alerts__form textarea {
+  inline-size: 100%;
+}
+
+.patterns-panel__list {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.patterns-panel__list li + li {
+  margin-block-start: var(--space-2);
+}
+
+@container (max-width: 64rem) {
+  .detail-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .detail-header__actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Rail blocks: one column that is never wider than the rail. */
+.open-alerts__list,
+.open-alerts__item,
+.open-alerts__form {
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
+}
+
+.ai-card__form {
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
+}
+
+/* Long AI labels wrap inside the rail instead of pushing past its edge. */
+.ai-card__badges .ui-badge {
+  max-inline-size: 100%;
+  white-space: normal;
+}
