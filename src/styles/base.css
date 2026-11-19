@@ -4,6 +4,9 @@
  * Every value comes from tokens.css.
  */
 
+/* Cascade layer `base` so Tailwind utilities (layer `utilities`) and component CSS win over it. */
+@layer base {
+
 *,
 *::before,
 *::after {
@@ -174,4 +177,5 @@ data,
   :focus-visible {
     outline-color: Highlight;
   }
+}
 }

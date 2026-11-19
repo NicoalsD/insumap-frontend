@@ -15,6 +15,14 @@ export function RootLayout() {
   );
 }
 
+/**
+ * Layout of the public landing: production-facing, without the simulated or academic notices.
+ * The page renders its own header, main and footer landmarks.
+ */
+export function LandingLayout() {
+  return <Outlet />;
+}
+
 /** Layout of the pages outside a shell (landing, login, design system): notices included. */
 export function PublicLayout() {
   return (
