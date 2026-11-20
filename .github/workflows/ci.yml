@@ -40,3 +40,54 @@ jobs:
         env:
           VITE_API_BASE_URL: /api/v1
           VITE_USE_MOCKS: 'true'
+
+  # Despliegue en AWS: S3 + CloudFront (insumap-backend/.agents/deployment.md).
+  # Solo tras un push a develop con la verificación en verde.
+  deploy:
+    name: despliegue en AWS
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: deploy-aws
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instala dependencias
+        run: npm ci
+
+      - name: Build contra la API real
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: /api/v1
+          VITE_USE_MOCKS: 'false'
+
+      - name: Credenciales temporales de AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Publica en S3 e invalida CloudFront
+        env:
+          BUCKET: ${{ vars.WEB_BUCKET }}
+          DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+          # assets/ lleva hash en el nombre; el resto (modelos, worker) no.
+          aws s3 sync dist "s3://$BUCKET" --delete --exclude index.html --exclude "assets/*" \
+            --cache-control "public,max-age=300"
+          aws s3 sync dist/assets "s3://$BUCKET/assets" --delete \
+            --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp dist/index.html "s3://$BUCKET/index.html" --cache-control "no-cache"
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*" >/dev/null
