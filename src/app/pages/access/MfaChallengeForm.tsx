@@ -1,4 +1,4 @@
-import { useRef, useState, type SubmitEvent } from 'react';
+import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { es } from '@/i18n/es';
 import { ApiError, apiErrorMessage } from '@/services/api/ApiError';
 import { useApi } from '@/state/useApi';
@@ -32,6 +32,16 @@ export function MfaChallengeForm({ challengeToken, onVerified, onExpired, onBack
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const codeRef = useRef<HTMLInputElement>(null);
+  // The field is disabled while verifying, and a disabled input cannot take focus:
+  // after a rejected code, focus it once the request settles.
+  const refocus = useRef(false);
+
+  useEffect(() => {
+    if (!pending && refocus.current) {
+      refocus.current = false;
+      codeRef.current?.focus();
+    }
+  }, [pending]);
 
   async function verify(value: string) {
     if (busy.current) return;
@@ -58,7 +68,7 @@ export function MfaChallengeForm({ challengeToken, onVerified, onExpired, onBack
       }
       setError(apiErrorMessage(failure));
       setCode('');
-      codeRef.current?.focus();
+      refocus.current = true;
     } finally {
       busy.current = false;
       setPending(false);
