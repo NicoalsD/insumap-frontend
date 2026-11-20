@@ -21,6 +21,14 @@
   text-align: center;
 }
 
+/* In the inspector column the two kinds keep one line each. */
+@media (min-width: 64rem) {
+  .injection-layer__kind {
+    padding-inline: var(--space-2);
+    white-space: nowrap;
+  }
+}
+
 .injection-layer__kind input {
   position: absolute;
   opacity: 0;
@@ -60,6 +68,117 @@
   background: var(--color-warning-subtle);
   color: var(--color-warning);
   border-radius: var(--radius-md);
+}
+
+/* The body in the middle of the home: it fills the column the page sizes for it. */
+.injection-stage {
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.injection-stage--waiting {
+  display: grid;
+  place-items: center;
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--color-lilac-subtle), var(--color-surface-sunken));
+}
+
+.injection-layer__other {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Reads as a link, but the whole 48 px row is the target (PRODUCT.md, patient surface). */
+.injection-layer__back {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 3rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.injection-layer__back:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* What each mark on the body means: the same shapes the scene draws, so color is never alone. */
+.injection-legend {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border-soft);
+}
+
+.injection-legend__title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.injection-legend__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.injection-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.injection-legend__mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  border-radius: 50%;
+  border: 2px solid currentcolor;
+}
+
+.injection-legend__mark svg {
+  inline-size: 0.6875rem;
+  block-size: 0.6875rem;
+  stroke-width: 3;
+}
+
+.injection-legend__mark[data-state='SUGGESTED'] {
+  border-color: var(--color-sun-ink);
+  background: var(--color-sun);
+}
+
+.injection-legend__mark[data-state='ALLOWED'] {
+  border-color: var(--color-primary);
+}
+
+.injection-legend__mark[data-state='RECENT'] {
+  border-color: var(--color-text-muted);
+  color: var(--color-text-muted);
+}
+
+.injection-legend__mark[data-state='AVOID'] {
+  border-color: var(--color-critical);
+  color: var(--color-critical);
 }
 
 .injection-recorder {

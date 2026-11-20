@@ -1,10 +1,8 @@
-import { Clock, Pause, Play, X } from 'lucide-react';
+import { Clock, Hand, Pause, Play, RefreshCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { bodyStrings } from '@/i18n/es.body';
 import { format } from '@/i18n/format';
 import type { PatientSex } from '@/services/dto/injection';
-import { Button } from '@/ui/Button';
-import { ChoiceSlider, Slider } from '@/ui/Slider';
 import { loadBodyAsset, shapeFor } from './bodyAsset';
 import './InjectionBodyMap.css';
 import {
@@ -42,22 +40,21 @@ export interface InjectionBodyMapProps {
   /** Accessible name of the site list, supplied by the caller (already in Spanish). */
   readonly label: string;
   /**
-   * Show the map without choosing: states, labels and the view switch stay, but the radios and spot
-   * choice are off, `onSelect` is never called, and the pointer keeps its normal shape.
+   * Show the map without choosing: states and labels stay, the body still turns, but the radios and
+   * spot choice are off, `onSelect` is never called, and the pointer keeps its normal shape.
    */
   readonly readOnly?: boolean | undefined;
   /** The patient's recorded sex and BMI: the body takes their build. Unknown keeps it neutral. */
   readonly sex?: PatientSex | undefined;
   readonly bmi?: number | null | undefined;
+  /** Fill the parent's height (a page column that sizes the stage) instead of a 3:4 box. */
+  readonly fill?: boolean | undefined;
 }
 
 const HALF_TURN_DEG = 180;
 const FULL_TURN_DEG = 360;
 const QUARTER_TURN_DEG = 90;
-const TURN_STEP_DEG = 5;
-const NAMED_TURN_TOLERANCE_DEG = 10;
 const PERCENT = 100;
-const ZOOM_STEP_PCT = 10;
 const DEG_TO_RAD = Math.PI / HALF_TURN_DEG;
 
 /** The angle that shows a view: the front faces the camera at 0, the back at 180. */
@@ -75,27 +72,15 @@ function viewOf(angle: number): BodyView {
   return Math.abs(normalizeAngle(angle)) <= QUARTER_TURN_DEG ? 'front' : 'back';
 }
 
-/** What the turn shows, in words: a named side near the marks, else the degrees and the side. */
-function turnText(angle: number): string {
-  const named: readonly [number, string][] = [
-    [0, bodyStrings.turnNamed.front],
-    [HALF_TURN_DEG, bodyStrings.turnNamed.back],
-    [-HALF_TURN_DEG, bodyStrings.turnNamed.back],
-    [QUARTER_TURN_DEG, bodyStrings.turnNamed.left],
-    [-QUARTER_TURN_DEG, bodyStrings.turnNamed.right],
-  ];
-  const near = named.find(([at]) => Math.abs(angle - at) <= NAMED_TURN_TOLERANCE_DEG);
-  if (near) return near[1];
-  return format(bodyStrings.turnDegrees, {
-    degrees: Math.abs(Math.round(angle)),
-    side: angle > 0 ? bodyStrings.turnSide.left : bodyStrings.turnSide.right,
-  });
-}
-
 /**
- * Where to inject: a translucent 3D body with one marker per site and spot, next to a native radio
- * list with the same sites and states. The list is the operable path (keyboard, screen readers);
- * the 3D map repeats it visually and adds tap targets. Without WebGL only the list is shown.
+ * Where to inject: a translucent 3D body that is itself the control. Drag turns it, a double click
+ * or a pinch brings the sites closer, and a tap on a marker chooses that site and spot. Everything
+ * else floats over the stage (the note about the other side, two round tools, the hint), so nothing
+ * that appears or disappears moves the body.
+ *
+ * The keyboard and screen-reader path is the native radio list with the same sites and states. It
+ * stays visually hidden until it takes focus, then opens as a floating panel over the stage while
+ * the body labels the focused site. Without WebGL the list is shown in the page instead.
  */
 export function InjectionBodyMap({
   sites,
@@ -109,6 +94,7 @@ export function InjectionBodyMap({
   readOnly = false,
   sex = 'UNKNOWN',
   bmi = null,
+  fill = false,
 }: InjectionBodyMapProps) {
   const ids = useId();
   const [angle, setAngle] = useState<number>(() => VIEW_ANGLE[viewProp ?? defaultView]);
@@ -148,8 +134,11 @@ export function InjectionBodyMap({
   const onSelectRef = useRef(onSelect);
   const readOnlyRef = useRef(readOnly);
   const suggestedEntry = entries.find((entry) => entry.state === 'SUGGESTED');
-  /** A suggested site on the other side: offered as a note while the back is showing. */
-  const suggestedOnFront = suggestedEntry !== undefined && siteView(suggestedEntry.site) !== view;
+  /** The side that shows the suggested site, when the body is turned to the other one. */
+  const suggestedSide =
+    suggestedEntry !== undefined && siteView(suggestedEntry.site) !== view
+      ? siteView(suggestedEntry.site)
+      : null;
 
   const onViewChangeRef = useRef(onViewChange);
   const turnTo = (next: number) => {
@@ -247,214 +236,253 @@ export function InjectionBodyMap({
     };
   }, [use3D, reduced]);
 
-  const siteGroupName = `${ids}-site`;
-  const hintId = `${ids}-hint`;
-  const spotHintId = `${ids}-spot-hint`;
+  const zoomed = zoomPct > ZOOM_MIN * PERCENT;
+  /** The zoom tool (or a double click) brings the sites close; the next one frames the body again. */
+  const toggleZoom = () => {
+    setZoomPct((current) => (current > ZOOM_MIN * PERCENT ? ZOOM_MIN * PERCENT : ZOOM_MAX * PERCENT));
+  };
+
+  const keys = (
+    <SiteKeys
+      ids={ids}
+      label={label}
+      entries={entries}
+      selectedSite={selectedSite}
+      selectedSpot={selectedSpot}
+      selectedEntry={selectedEntry}
+      readOnly={readOnly}
+      onChoose={chooseSite}
+      onSpot={(spot) => {
+        if (selectedSite) onSelect(selectedSite, spot);
+      }}
+      onFocusSite={setFocusSite}
+    />
+  );
+
+  if (!showStage) {
+    return (
+      <div className={readOnly ? 'ibm ibm--static ibm--readonly' : 'ibm ibm--static'}>
+        <p className="ibm__notice">{bodyStrings.unavailable}</p>
+        <div className="ibm__keys ibm__keys--static">{keys}</div>
+      </div>
+    );
+  }
+
+  const classes = ['ibm', readOnly ? 'ibm--readonly' : '', fill ? 'ibm--fill' : '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className="ibm-host">
-      <div className={readOnly ? 'ibm ibm--readonly' : 'ibm'}>
-        <div className="ibm__main">
-          {showStage ? (
-            <>
-              {suggestedOnFront && view === 'back' ? (
-                <div className="ibm__note" role="note">
-                  <p>{bodyStrings.suggestedOnFront}</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      changeView('front');
-                    }}
-                  >
-                    {bodyStrings.showFront}
-                  </Button>
-                </div>
-              ) : null}
-              <div className="ibm__stage">
-                <canvas
-                  ref={canvasRef}
-                  className="ibm__canvas"
-                  role="img"
-                  aria-label={bodyStrings.canvas}
-                />
-                <div
-                  ref={labelsRef}
-                  className="ibm__labels"
-                  aria-hidden="true"
-                  data-ready={sceneReady || undefined}
-                >
-                  <svg className="ibm__leaders" focusable="false">
-                    {labels.map((item) => (
-                      <line
-                        key={item.site}
-                        className="ibm__leader"
-                        data-leader={item.site}
-                        visibility="hidden"
-                      />
-                    ))}
-                  </svg>
-                  {labels.map((item) => {
-                    const state = stateBySite.get(item.site);
-                    return (
-                      <span
-                        key={item.site}
-                        className="ibm__label"
-                        data-label={item.site}
-                        data-kind={item.kind}
-                        hidden
-                      >
-                        {item.kind === 'point' ? stateIcon(state) : null}
-                        {labelText(item, state)}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="ibm__controls">
-                <Slider
-                  className="ibm__turn"
-                  label={bodyStrings.turn}
-                  value={Math.round(angle)}
-                  min={-HALF_TURN_DEG}
-                  max={HALF_TURN_DEG}
-                  step={TURN_STEP_DEG}
-                  origin={0}
-                  valueText={turnText}
-                  describedBy={`${ids}-drag-hint`}
-                  marks={[
-                    { value: -HALF_TURN_DEG, label: bodyStrings.turnMarks.back },
-                    { value: -QUARTER_TURN_DEG, label: bodyStrings.turnMarks.right },
-                    { value: 0, label: bodyStrings.turnMarks.front },
-                    { value: QUARTER_TURN_DEG, label: bodyStrings.turnMarks.left },
-                    { value: HALF_TURN_DEG, label: bodyStrings.turnMarks.back },
-                  ]}
-                  onChange={turnTo}
-                />
-                <Slider
-                  className="ibm__zoom"
-                  label={bodyStrings.zoom}
-                  value={zoomPct}
-                  min={ZOOM_MIN * PERCENT}
-                  max={ZOOM_MAX * PERCENT}
-                  step={ZOOM_STEP_PCT}
-                  valueText={(value) => format(bodyStrings.zoomValue, { value })}
-                  marks={[
-                    { value: ZOOM_MIN * PERCENT, label: bodyStrings.zoomMarks.far },
-                    { value: ZOOM_MAX * PERCENT, label: bodyStrings.zoomMarks.near },
-                  ]}
-                  onChange={setZoomPct}
-                />
-                {reduced ? null : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    icon={playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-                    onClick={() => {
-                      setPlaying((current) => !current);
-                    }}
-                  >
-                    {playing ? bodyStrings.pause : bodyStrings.play}
-                  </Button>
-                )}
-              </div>
-              <p id={`${ids}-drag-hint`} className="ibm__hint ibm__drag-hint">
-                {bodyStrings.dragHint}
-              </p>
-            </>
-          ) : (
-            <p className="ibm__notice">{bodyStrings.unavailable}</p>
-          )}
-        </div>
-
-        <div className="ibm__options">
-          <fieldset className="ibm__sites" aria-describedby={hintId}>
-            <legend>{label}</legend>
-            {entries.map((entry) => {
-              const selectable = isSelectable(entry.state);
-              return (
-                <label key={entry.site} className="ibm__option" data-state={entry.state}>
-                  <input
-                    type="radio"
-                    name={siteGroupName}
-                    value={entry.site}
-                    checked={selectedSite === entry.site}
-                    disabled={!selectable || readOnly}
-                    onChange={() => {
-                      chooseSite(entry);
-                    }}
-                    onFocus={() => {
-                      setFocusSite(entry.site);
-                    }}
-                    onBlur={() => {
-                      setFocusSite(null);
-                    }}
-                  />
-                  <span className="ibm__option-name">{bodyStrings.siteShort[entry.site]}</span>
-                  {/* The space keeps the accessible name readable: inline spans would otherwise run together. */}{' '}
-                  <span className="ibm__option-state">{stateText(entry)}</span>
-                </label>
-              );
-            })}
-            <p id={hintId} className="ibm__hint">
-              {bodyStrings.siteHint}
-            </p>
-          </fieldset>
-
-          {readOnly ? (
-            <div className="ibm__spots">
-              <p className="ibm__legend">{bodyStrings.spotGroup}</p>
-              <p className="ibm__readonly-spot">
-                {asSpot(selectedSpot) !== null && selectedSite !== null
-                  ? format(bodyStrings.spotChosen, { spot: asSpot(selectedSpot) ?? 1 })
-                  : bodyStrings.noSpot}
-              </p>
-            </div>
-          ) : (
-            <div
-              role="group"
-              aria-labelledby={`${ids}-spot-legend`}
-              aria-describedby={spotHintId}
-              className="ibm__spots"
-            >
-              <p id={`${ids}-spot-legend`} className="ibm__legend">
-                {bodyStrings.spotGroup}
-              </p>
-              <ChoiceSlider
-                className="ibm__spot-slider"
-                label={bodyStrings.spotGroup}
-                hideLabel
-                size="lg"
-                value={asSpot(selectedSpot) ?? 1}
-                highlight={selectedEntry ? defaultSpotFor(selectedEntry) : undefined}
-                disabled={selectedSite === null}
-                describedBy={spotHintId}
-                options={SPOT_NUMBERS.map((spot) => ({
-                  value: spot,
-                  label: format(bodyStrings.spotOption, { spot }),
-                  text:
-                    selectedEntry && defaultSpotFor(selectedEntry) === spot
-                      ? format(bodyStrings.spotSuggested, { spot })
-                      : format(bodyStrings.spotOption, { spot }),
-                }))}
-                onChange={(spot) => {
-                  if (selectedSite) onSelect(selectedSite, spot);
-                }}
+    <div className={classes}>
+      <div className="ibm__stage">
+        <canvas
+          ref={canvasRef}
+          className="ibm__canvas"
+          role="img"
+          aria-label={bodyStrings.canvas}
+          onDoubleClick={toggleZoom}
+        />
+        <div
+          ref={labelsRef}
+          className="ibm__labels"
+          aria-hidden="true"
+          data-ready={sceneReady || undefined}
+        >
+          <svg className="ibm__leaders" focusable="false">
+            {labels.map((item) => (
+              <line
+                key={item.site}
+                className="ibm__leader"
+                data-leader={item.site}
+                visibility="hidden"
               />
-              <p id={spotHintId} className="ibm__hint">
-                {selectedSite === null
-                  ? bodyStrings.spotNeedsSite
-                  : selectedEntry?.lastSpot
-                    ? format(bodyStrings.spotLastHint, { spot: selectedEntry.lastSpot })
-                    : ''}
-              </p>
-            </div>
+            ))}
+          </svg>
+          {labels.map((item) => {
+            const state = stateBySite.get(item.site);
+            return (
+              <span
+                key={item.site}
+                className="ibm__label"
+                data-label={item.site}
+                data-kind={item.kind}
+                hidden
+              >
+                {item.kind === 'point' ? stateIcon(state) : null}
+                {labelText(item, state)}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Over the stage, never in the flow: it can appear without moving the body. */}
+        {suggestedSide ? (
+          <button
+            type="button"
+            className="ibm__chip"
+            onClick={() => {
+              changeView(suggestedSide);
+            }}
+          >
+            <span>
+              {suggestedSide === 'front' ? bodyStrings.suggestedOnFront : bodyStrings.suggestedOnBack}
+            </span>
+            <span className="ibm__chip-action">{bodyStrings.turnToIt}</span>
+          </button>
+        ) : null}
+
+        <div className="ibm__keys visually-hidden">{keys}</div>
+
+        <div className="ibm__tools" role="group" aria-label={bodyStrings.tools}>
+          <button
+            type="button"
+            className="ibm__tool"
+            aria-label={view === 'front' ? bodyStrings.flipToBack : bodyStrings.flipToFront}
+            title={view === 'front' ? bodyStrings.flipToBack : bodyStrings.flipToFront}
+            onClick={() => {
+              changeView(view === 'front' ? 'back' : 'front');
+            }}
+          >
+            <RefreshCcw aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="ibm__tool"
+            aria-label={zoomed ? bodyStrings.zoomOut : bodyStrings.zoomIn}
+            title={zoomed ? bodyStrings.zoomOut : bodyStrings.zoomIn}
+            onClick={toggleZoom}
+          >
+            {zoomed ? <ZoomOut aria-hidden="true" /> : <ZoomIn aria-hidden="true" />}
+          </button>
+          {reduced ? null : (
+            <button
+              type="button"
+              className="ibm__tool"
+              aria-label={playing ? bodyStrings.pause : bodyStrings.play}
+              title={playing ? bodyStrings.pause : bodyStrings.play}
+              onClick={() => {
+                setPlaying((current) => !current);
+              }}
+            >
+              {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+            </button>
           )}
         </div>
+
+        <p className="ibm__hint-chip">
+          <Hand aria-hidden="true" />
+          <span>{readOnly ? bodyStrings.hintRead : bodyStrings.hintChoose}</span>
+        </p>
       </div>
     </div>
+  );
+}
+
+interface SiteKeysProps {
+  readonly ids: string;
+  readonly label: string;
+  readonly entries: readonly InjectionSiteEntry[];
+  readonly selectedSite: SiteCode | null;
+  readonly selectedSpot: number | null;
+  readonly selectedEntry: InjectionSiteEntry | undefined;
+  readonly readOnly: boolean;
+  readonly onChoose: (entry: InjectionSiteEntry) => void;
+  readonly onSpot: (spot: SpotNumber) => void;
+  readonly onFocusSite: (site: SiteCode | null) => void;
+}
+
+/** The native path: one radio per site with its state in words, then the spot within the site. */
+function SiteKeys({
+  ids,
+  label,
+  entries,
+  selectedSite,
+  selectedSpot,
+  selectedEntry,
+  readOnly,
+  onChoose,
+  onSpot,
+  onFocusSite,
+}: SiteKeysProps) {
+  const hintId = `${ids}-hint`;
+  const spotHintId = `${ids}-spot-hint`;
+  const suggestedSpot = selectedEntry ? defaultSpotFor(selectedEntry) : null;
+  return (
+    <>
+      <fieldset className="ibm__sites" aria-describedby={hintId}>
+        <legend>{label}</legend>
+        {entries.map((entry) => {
+          const selectable = isSelectable(entry.state);
+          return (
+            <label key={entry.site} className="ibm__option" data-state={entry.state}>
+              <input
+                type="radio"
+                name={`${ids}-site`}
+                value={entry.site}
+                checked={selectedSite === entry.site}
+                disabled={!selectable || readOnly}
+                onChange={() => {
+                  onChoose(entry);
+                }}
+                onFocus={() => {
+                  onFocusSite(entry.site);
+                }}
+                onBlur={() => {
+                  onFocusSite(null);
+                }}
+              />
+              <span className="ibm__option-name">{bodyStrings.siteShort[entry.site]}</span>
+              {/* The space keeps the accessible name readable: inline spans would otherwise run together. */}{' '}
+              <span className="ibm__option-state">{stateText(entry)}</span>
+            </label>
+          );
+        })}
+        <p id={hintId} className="ibm__hint">
+          {bodyStrings.siteHint}
+        </p>
+      </fieldset>
+
+      {readOnly ? (
+        <p className="ibm__readonly-spot">
+          {asSpot(selectedSpot) !== null && selectedSite !== null
+            ? format(bodyStrings.spotChosen, { spot: asSpot(selectedSpot) ?? 1 })
+            : bodyStrings.noSpot}
+        </p>
+      ) : (
+        <fieldset
+          className="ibm__spots"
+          disabled={selectedSite === null}
+          aria-describedby={spotHintId}
+        >
+          <legend>{bodyStrings.spotGroup}</legend>
+          <div className="ibm__spot-row">
+            {SPOT_NUMBERS.map((spot) => (
+              <label key={spot} className="ibm__spot">
+                <input
+                  type="radio"
+                  name={`${ids}-spot`}
+                  value={spot}
+                  checked={selectedSite !== null && asSpot(selectedSpot) === spot}
+                  onChange={() => {
+                    onSpot(spot);
+                  }}
+                />
+                {suggestedSpot === spot
+                  ? format(bodyStrings.spotSuggested, { spot })
+                  : format(bodyStrings.spotOption, { spot })}
+              </label>
+            ))}
+          </div>
+          <p id={spotHintId} className="ibm__hint">
+            {selectedSite === null
+              ? bodyStrings.spotNeedsSite
+              : selectedEntry?.lastSpot
+                ? format(bodyStrings.spotLastHint, { spot: selectedEntry.lastSpot })
+                : ''}
+          </p>
+        </fieldset>
+      )}
+    </>
   );
 }
 

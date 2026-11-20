@@ -134,6 +134,7 @@ describe('patient readings, plan and messages', () => {
     const { router, container } = await signInAsPatient();
     await router.navigate('/patient/messages');
     expect(await screen.findByText(es.patient.messages.emergency)).toBeInTheDocument();
+    expect(within(screen.getByRole('complementary', { name: es.patient.messages.asideTitle })).getByText(es.patient.messages.emergency)).toBeInTheDocument();
     const thread = await screen.findByRole('list');
     expect(within(thread).queryAllByRole('listitem').length).toBeGreaterThan(0);
 

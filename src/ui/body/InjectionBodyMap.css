@@ -1,50 +1,24 @@
-/* Injection-site map: the 3D stage with its floating labels, and the native radio list beside it. */
-
-/* The wrapper measures its own width: in a narrow rail the stage and the list stack, in a wide column they sit side by side. */
-.ibm-host {
-  container-type: inline-size;
-}
+/*
+ * Injection-site map: the body is the control. The stage holds the canvas and its floating labels;
+ * every other piece (the note about the other side, the tools, the hint, the keyboard panel) floats
+ * over it with absolute positioning, so showing or hiding one never moves the body.
+ */
 
 .ibm {
+  position: relative;
   display: grid;
-  gap: var(--space-6);
-  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
 }
 
-@container (min-width: 40rem) {
-  /* A tall stage (3:4) and a wide column for the list so names stay on one line. */
-  .ibm {
-    grid-template-columns: minmax(0, 22rem) minmax(16rem, 1fr);
-    align-items: start;
-  }
+.ibm--fill {
+  block-size: 100%;
 }
 
-/* Under the body, at its width: the turn first (used most), then the zoom and the pause. */
-.ibm__controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--space-1) var(--space-4);
-  margin-block-start: var(--space-3);
-}
-
-.ibm__controls > .ibm__turn {
-  grid-column: 1 / -1;
-}
-
-.ibm__controls > .ui-button {
-  margin-block-end: var(--space-6);
-}
-
-.ibm__drag-hint {
-  margin-block-start: var(--space-1);
-}
-
-/* Vertical figure: 3:4, at least 30rem tall on desktop, the full width of the column on mobile. */
+/* Vertical figure: 3:4 by default; a page column that sizes the stage passes `fill`. */
 .ibm__stage {
   position: relative;
   inline-size: 100%;
-  min-block-size: 30rem;
+  min-block-size: 24rem;
   aspect-ratio: 3 / 4;
   border: var(--border-width) solid var(--color-border-soft);
   border-radius: var(--radius-lg);
@@ -52,13 +26,23 @@
   background:
     radial-gradient(120% 70% at 50% 18%, var(--color-surface) 0%, transparent 60%),
     linear-gradient(180deg, var(--color-lilac-subtle), var(--color-surface-sunken));
-  overflow: hidden;
+  overflow: clip;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ibm--fill .ibm__stage {
+  aspect-ratio: auto;
+  block-size: 100%;
+  min-block-size: 0;
 }
 
 .ibm__canvas {
   position: absolute;
   inset: 0;
+  z-index: 1;
+  display: block;
   inline-size: 100%;
   block-size: 100%;
   /* Vertical page scroll stays native; the canvas only takes horizontal gestures for taps. */
@@ -68,6 +52,7 @@
 .ibm__labels {
   position: absolute;
   inset: 0;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -121,13 +106,161 @@
   display: none;
 }
 
-.ibm__options {
-  display: grid;
-  gap: var(--space-5);
-  min-inline-size: 0;
+/* ---- Floating pieces over the stage ---- */
+
+/* The suggested site is on the other side: one tap turns the body there. */
+.ibm__chip {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: var(--space-3);
+  inset-inline: 0;
+  inline-size: fit-content;
+  max-inline-size: calc(100% - 2 * var(--space-3));
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* A 48 px target, the patient surface's minimum (PRODUCT.md). */
+  min-block-size: 3rem;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: start;
+  cursor: pointer;
+  animation: ibm-chip-in 320ms var(--ease-spring) both;
 }
 
-.ibm__sites {
+.ibm__chip-action {
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-weight: var(--font-weight-semibold);
+  transition: background-color 160ms var(--ease-out);
+}
+
+.ibm__chip:hover .ibm__chip-action {
+  background: var(--color-primary-hover);
+}
+
+.ibm__chip:active {
+  scale: 0.97;
+}
+
+@keyframes ibm-chip-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.75rem;
+  }
+}
+
+/* Round tools in the corner the thumb and the pointer reach: turn around, zoom, pause. */
+.ibm__tools {
+  position: absolute;
+  z-index: 3;
+  inset-block-end: var(--space-3);
+  inset-inline-end: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ibm__tool {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--ease-out),
+    scale 220ms var(--ease-spring);
+}
+
+.ibm__tool svg {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+
+.ibm__tool:hover {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary-subtle-text);
+}
+
+.ibm__tool:active {
+  scale: 0.92;
+}
+
+.ibm__hint-chip {
+  position: absolute;
+  z-index: 3;
+  inset-block-end: var(--space-3);
+  inset-inline-start: var(--space-3);
+  max-inline-size: calc(100% - 3rem - 3 * var(--space-3));
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.ibm__hint-chip svg {
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+/*
+ * The keyboard path. Hidden by `.visually-hidden` until it takes focus, then it opens as a panel
+ * over the stage (never pushing the body down) while the body labels the focused site.
+ */
+.ibm__keys:focus-within {
+  position: absolute;
+  z-index: 4;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  inline-size: min(20rem, calc(100% - 2 * var(--space-3)));
+  max-block-size: calc(100% - 2 * var(--space-3));
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  cursor: default;
+}
+
+.ibm__keys--static {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ibm--static {
+  gap: var(--space-4);
+}
+
+.ibm__sites,
+.ibm__spots {
   min-inline-size: 0;
   margin: 0;
   padding: 0;
@@ -137,14 +270,10 @@
 }
 
 .ibm__sites legend,
-.ibm__legend {
+.ibm__spots legend {
   padding-block-end: var(--space-2);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
-}
-
-.ibm__legend {
-  margin: 0;
 }
 
 .ibm__option {
@@ -171,29 +300,6 @@
   background: none;
 }
 
-.ibm__note {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin-block-end: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  background: var(--color-primary-subtle);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-}
-
-.ibm__note p {
-  margin: 0;
-}
-
-.ibm__readonly-spot {
-  margin: 0;
-  color: var(--color-text);
-}
-
 .ibm__option:has(input:checked) {
   background: var(--color-primary-subtle);
 }
@@ -214,13 +320,42 @@
   text-align: end;
 }
 
-.ibm__option input[type='radio'] {
+.ibm__option input[type='radio'],
+.ibm__spot input[type='radio'] {
   inline-size: 1.25rem;
   block-size: 1.25rem;
   margin: 0;
   accent-color: var(--color-primary);
 }
 
+.ibm__spot-row {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ibm__spot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--row-height);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.ibm__spot:has(input:checked) {
+  background: var(--color-primary-subtle);
+}
+
+.ibm__spots:disabled .ibm__spot {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.ibm__readonly-spot {
+  margin: 0;
+  color: var(--color-text);
+}
 
 .ibm__hint,
 .ibm__notice {
@@ -229,8 +364,8 @@
   font-size: var(--font-size-sm);
 }
 
-.ibm__spots .ibm__hint {
-  margin-block-start: var(--space-2);
+.ibm__spots .ibm__hint:empty {
+  display: none;
 }
 
 .ibm__notice {
@@ -243,4 +378,15 @@
 .ibm :focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ibm__chip {
+    animation: none;
+  }
+
+  .ibm__tool,
+  .ibm__chip-action {
+    transition: none;
+  }
 }

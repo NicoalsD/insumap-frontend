@@ -69,11 +69,14 @@ export function AssistantChat({ limits }: { readonly limits: FieldLimitsDto }) {
 
   return (
     <div className="assistant-chat">
-      <p className="ai-notice-band">
-        <ShieldCheck aria-hidden="true" size="1.25rem" />
-        {es.patient.assistant.notice}
-      </p>
+      <aside className="assistant-chat__aside" aria-label={es.patient.assistant.asideLabel}>
+        <p className="ai-notice-band">
+          <ShieldCheck aria-hidden="true" size="1.25rem" />
+          {es.patient.assistant.notice}
+        </p>
+      </aside>
 
+      <div className="assistant-chat__main">
       {emergency ? (
         <p role="alert" className="assistant-chat__emergency">{es.patient.assistant.escalationEmergency}</p>
       ) : null}
@@ -147,6 +150,7 @@ export function AssistantChat({ limits }: { readonly limits: FieldLimitsDto }) {
           </>
         }
       />
+      </div>
     </div>
   );
 }

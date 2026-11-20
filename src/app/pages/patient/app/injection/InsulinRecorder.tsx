@@ -216,10 +216,12 @@ export function InsulinRecorder({ limits }: InsulinRecorderProps) {
           {step > FIRST_STEP ? (
             <Button size="lg" variant="secondary" onClick={() => { setError(null); setStep(step - 1); }}>{es.patient.injection.record.back}</Button>
           ) : null}
+          {/* Distinct keys: React must not turn the clicked "Continuar" into the submit button
+              while the click is still running, or the form saves before the site step is shown. */}
           {step < STEPS ? (
-            <Button size="lg" onClick={next}>{es.patient.injection.record.next}</Button>
+            <Button key="next" size="lg" onClick={next}>{es.patient.injection.record.next}</Button>
           ) : (
-            <Button type="submit" size="lg" loading={busy} disabled={shown === null}>
+            <Button key="save" type="submit" size="lg" loading={busy} disabled={shown === null}>
               {busy ? es.patient.injection.record.saving : es.patient.injection.record.save}
             </Button>
           )}

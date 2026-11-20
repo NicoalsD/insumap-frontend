@@ -59,12 +59,12 @@ describe('home: where to inject', () => {
     await expectNoAxeViolations(container);
   });
 
-  it('changes the site when the patient picks another allowed one on the map list', async () => {
+  it('changes the site when the patient picks another allowed one on the body', async () => {
     await signInAsPatient();
     const before = (await screen.findByText(/^Hoy: .+, punto \d$/)).textContent;
-    const layer = screen.getByRole('heading', { name: es.patient.injection.title }).closest('section');
-    if (!layer) throw new Error('injection layer not rendered');
-    const options = within(layer)
+    // The body in the middle of the home is the control; its native list is the keyboard path.
+    const stage = screen.getByRole('region', { name: es.patient.injection.stageLabel });
+    const options = within(stage)
       .getAllByRole('radio')
       .filter((radio) => radio.getAttribute('name')?.includes('site') && !(radio as HTMLInputElement).disabled);
     const other = options.find((radio) => !(radio as HTMLInputElement).checked);
@@ -73,6 +73,9 @@ describe('home: where to inject', () => {
     await waitFor(() => {
       expect(screen.getByText(/^Hoy: .+, punto \d$/).textContent).not.toBe(before);
     });
+    expect(screen.getByText(es.patient.injection.chooseOther)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: es.patient.injection.backToSuggestion }));
+    expect(screen.getByText(/^Hoy: .+, punto \d$/).textContent).toBe(before);
   });
 });
 

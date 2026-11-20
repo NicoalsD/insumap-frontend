@@ -1,33 +1,84 @@
-import { useMemo, useState } from 'react';
+import { Clock, X } from 'lucide-react';
 import { es } from '@/i18n/es';
-import { InjectionBodyMap, type BodyView, type SiteCode } from '@/ui/body';
-import type { InjectionSitesDto, InsulinKind } from '@/services/dto/injection';
+import { InjectionBodyMap, type InjectionState } from '@/ui/body';
 import { ErrorState, LoadingState } from '@/ui';
-import { useInjectionSites } from './injectionQueries';
-import { needleText, reasonTexts, sitesToEntries, todayText } from './injectionModel';
-import { useNow } from '../useNow';
+import { needleText, reasonTexts, todayText } from './injectionModel';
 import './Injection.css';
 import { useOwnBody } from './useOwnBody';
+import { HOME_KINDS, type InjectionHome } from './useInjectionHome';
 
-/** The kinds the home layer offers: the two the patient uses every day. */
-const HOME_KINDS = ['BOLUS', 'BASAL'] as const satisfies readonly InsulinKind[];
+/** The marks on the body, in the order the legend explains them. */
+const LEGEND_STATES = ['SUGGESTED', 'ALLOWED', 'RECENT', 'AVOID'] as const satisfies readonly InjectionState[];
 
 /**
- * Home layer "Dónde inyectarte": where to inject today for the chosen kind, shown on the body map
- * with the reasons in plain language. Read-only except for choosing a site; no units, ever.
+ * The body in the middle of the home: the only control of the site. Read-only when the API found no
+ * safe site, so nothing can be picked; the inspector says why.
  *
- * Pattern: none (a layer over `InjectionBodyMap`, the strategy-free view of the API suggestion).
+ * Pattern: none (a stage over `InjectionBodyMap`, the strategy-free view of the API suggestion).
  */
-export function InjectionLayer() {
-  const [kind, setKind] = useState<(typeof HOME_KINDS)[number]>('BOLUS');
+export function InjectionStage({ home }: { readonly home: InjectionHome }) {
+  const body = useOwnBody();
+  const { query } = home;
+  if (query.isPending) {
+    return (
+      <div className="injection-stage injection-stage--waiting">
+        <LoadingState />
+      </div>
+    );
+  }
+  if (query.isError) {
+    return (
+      <div className="injection-stage injection-stage--waiting">
+        <ErrorState
+          error={query.error}
+          onRetry={() => {
+            void query.refetch();
+          }}
+        />
+      </div>
+    );
+  }
+  const noSuggestion = query.data.suggestion === null;
+  return (
+    <div className="injection-stage">
+      <InjectionBodyMap
+        fill
+        sex={body.sex}
+        bmi={body.bmi}
+        sites={home.entries}
+        selectedSite={home.shown?.site ?? null}
+        selectedSpot={home.shown?.spot ?? null}
+        onSelect={home.choose}
+        readOnly={noSuggestion}
+        view={home.view}
+        onViewChange={home.setView}
+        label={es.patient.injection.mapLabel}
+      />
+    </div>
+  );
+}
+
+/**
+ * Inspector "Dónde inyectarte": the kind, today's site in plain words, the reasons and what each
+ * mark on the body means. Never units.
+ */
+export function InjectionInspector({ home }: { readonly home: InjectionHome }) {
+  const { kind, setKind, query, shown, chosenOther } = home;
+  const suggestion = query.data?.suggestion ?? null;
   return (
     <section className="patient-layer injection-layer" aria-labelledby="layer-injection">
-      <h2 id="layer-injection" className="patient-layer__title">{es.patient.injection.title}</h2>
+      <h2 id="layer-injection" className="patient-layer__title">
+        {es.patient.injection.title}
+      </h2>
       <p className="patient-layer__body">{es.patient.injection.description}</p>
       <fieldset className="injection-layer__kinds">
         <legend className="visually-hidden">{es.patient.injection.kindLegend}</legend>
         {HOME_KINDS.map((option) => (
-          <label key={option} className="injection-layer__kind" data-selected={option === kind || undefined}>
+          <label
+            key={option}
+            className="injection-layer__kind"
+            data-selected={option === kind || undefined}
+          >
             <input
               type="radio"
               name="injection-kind"
@@ -41,75 +92,46 @@ export function InjectionLayer() {
           </label>
         ))}
       </fieldset>
-      <InjectionForKind key={kind} kind={kind} />
+
+      {query.data === undefined ? null : suggestion === null ? (
+        <p role="status" className="injection-layer__none">
+          {es.patient.injection.noSuggestion}
+        </p>
+      ) : (
+        <div className="injection-layer__body">
+          <p className="injection-layer__today" role="status" aria-live="polite">
+            {shown ? todayText(shown.site, shown.spot) : null}
+          </p>
+          <ul className="injection-layer__reasons">
+            {reasonTexts(suggestion.reason_codes).map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+            <li>{needleText(suggestion.needle_note)}</li>
+          </ul>
+          {chosenOther ? (
+            <p className="injection-layer__other">
+              <span>{es.patient.injection.chooseOther}</span>
+              <button type="button" className="injection-layer__back" onClick={home.backToSuggestion}>
+                {es.patient.injection.backToSuggestion}
+              </button>
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      <div className="injection-legend">
+        <h3 className="injection-legend__title">{es.patient.injection.legendTitle}</h3>
+        <ul className="injection-legend__list">
+          {LEGEND_STATES.map((state) => (
+            <li key={state} className="injection-legend__item">
+              <span className="injection-legend__mark" data-state={state} aria-hidden="true">
+                {state === 'RECENT' ? <Clock /> : state === 'AVOID' ? <X /> : null}
+              </span>
+              {es.patient.injection.legend[state]}
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
-  );
-}
-
-/** Keyed by kind, so a change of kind starts from that kind's suggestion. */
-function InjectionForKind({ kind }: { readonly kind: InsulinKind }) {
-  const query = useInjectionSites(kind);
-  if (query.isPending) return <LoadingState />;
-  if (query.isError) {
-    return <ErrorState error={query.error} onRetry={() => { void query.refetch(); }} />;
-  }
-  return <InjectionSuggestion data={query.data} />;
-}
-
-function InjectionSuggestion({ data }: { readonly data: InjectionSitesDto }) {
-  const now = useNow();
-  const body = useOwnBody();
-  const entries = useMemo(() => sitesToEntries(data, now), [data, now]);
-  const suggestion = data.suggestion;
-  const [choice, setChoice] = useState<{ site: SiteCode; spot: number } | null>(null);
-  const [view, setView] = useState<BodyView>('front');
-  const shown = choice ?? (suggestion ? { site: suggestion.site, spot: suggestion.spot } : null);
-  const chosenOther = choice !== null && suggestion !== null && (choice.site !== suggestion.site || choice.spot !== suggestion.spot);
-
-  if (suggestion === null) {
-    return (
-      <>
-        <p role="status" className="injection-layer__none">{es.patient.injection.noSuggestion}</p>
-        <InjectionBodyMap
-          sex={body.sex}
-          bmi={body.bmi}
-          sites={entries}
-          selectedSite={null}
-          selectedSpot={null}
-          onSelect={() => undefined}
-          view={view}
-          onViewChange={setView}
-          label={es.patient.injection.mapLabel}
-        />
-      </>
-    );
-  }
-
-  return (
-    <div className="injection-layer__body">
-      <p className="injection-layer__today" role="status" aria-live="polite">
-        {shown ? todayText(shown.site, shown.spot) : null}
-      </p>
-      <ul className="injection-layer__reasons">
-        {reasonTexts(suggestion.reason_codes).map((text) => (
-          <li key={text}>{text}</li>
-        ))}
-        <li>{needleText(suggestion.needle_note)}</li>
-      </ul>
-      {chosenOther ? <p className="patient-layer__body">{es.patient.injection.chooseOther}</p> : null}
-      <InjectionBodyMap
-          sex={body.sex}
-          bmi={body.bmi}
-        sites={entries}
-        selectedSite={shown?.site ?? null}
-        selectedSpot={shown?.spot ?? null}
-        onSelect={(site, spot) => {
-          setChoice({ site, spot });
-        }}
-        view={view}
-        onViewChange={setView}
-        label={es.patient.injection.mapLabel}
-      />
-    </div>
   );
 }
